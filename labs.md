@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.0 - 07/31/26
+## Revision 1.1 - 08/01/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until you see "Ollama is ready with model llama3.2:3b" in the terminal before starting Lab 1 (setup takes 3-5 minutes).**
 
@@ -62,6 +62,8 @@ python supervisor_team.py
 <br>
 
 7. Look at the **FINAL ANSWER**. The supervisor combined what its two specialists returned into a single response. Note that the supervisor itself never called `lookup_company` or `calculate` directly - those belong to the specialists.
+
+**Focus on the routing, not the facts. With a 3B model the numbers or the city are sometimes wrong - the model may pass a sloppy argument to a tool and then fill in the gap from imagination. That's a model-size limitation, not a flaw in the pattern, and it's the reason production systems validate what comes back from a delegated agent.**
 
 <br>
 
@@ -125,13 +127,13 @@ code -d ../extra/content_crew.txt content_crew.py
 
 <br>
 
-4. Run the crew with its default topic (the A2A protocol - which we'll spend the rest of the workshop on):
+4. Run the crew with its default topic (GitHub Codespaces - something the local model knows well, so we can focus on the *handoff* rather than the content):
 
 ```
 python content_crew.py
 ```
 
-**CrewAI prints banners as each agent starts and finishes. Expect a couple of minutes total with the local model.**
+**CrewAI prints banners as each agent starts and finishes. Expect a couple of minutes total with the local model. When the run ends, CrewAI asks "Would you like to view your execution traces? [y/N]" - just press ENTER (or wait 20 seconds) to skip it and get your prompt back.**
 
 <br>
 
@@ -152,8 +154,10 @@ python content_crew.py
 8. Now run it with a topic of your own. The script takes the topic as a command-line argument:
 
 ```
-python content_crew.py "GitHub Codespaces"
+python content_crew.py "Docker containers"
 ```
+
+**Pick a topic the model is likely to know. A small local model has no web access and no knowledge of very recent technology - ask it about something obscure (or about A2A itself, which postdates its training) and the researcher will honestly report that it found nothing.**
 
 <br>
 
@@ -395,12 +399,12 @@ code crewai_server.py
 3. Start both agent servers in the background from this one terminal:
 
 ```
-python langgraph_server.py > /tmp/lg.log 2>&1 &
-python crewai_server.py > /tmp/crew.log 2>&1 &
+python langgraph_server.py < /dev/null > /tmp/lg.log 2>&1 &
+python crewai_server.py < /dev/null > /tmp/crew.log 2>&1 &
 sleep 12
 ```
 
-**The `sleep` gives the servers time to import their frameworks and start up (about 10-15 seconds).**
+**The `sleep` gives the servers time to import their frameworks and start up (about 10-15 seconds). The `< /dev/null` matters: after a crew finishes, CrewAI prints an interactive prompt asking whether you want to view execution traces. A background job that tries to read your keyboard gets suspended by the shell, which would silently kill the CrewAI agent after its first request.**
 
 <br>
 

@@ -18,7 +18,7 @@ def get_model():
     """Use Groq if GROQ_API_KEY is set; otherwise use local Ollama."""
     if os.environ.get("GROQ_API_KEY"):
         from langchain_groq import ChatGroq
-        return ChatGroq(model="llama-3.1-8b-instant", temperature=0)
+        return ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
     from langchain_ollama import ChatOllama
     return ChatOllama(model=os.environ.get("OLLAMA_MODEL", "llama3.2:3b"),
                       temperature=0)

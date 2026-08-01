@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 
-**Hands-on workshop — Revision 1.0 — 07/31/26**
+**Hands-on workshop — Revision 1.1 — 08/01/26**
 
 This repository contains the labs, code, and setup for the *Multi-Agent AI Systems & the A2A Protocol*
 workshop. In it, you'll build multi-agent systems with LangGraph and CrewAI, learn Google's A2A
@@ -14,7 +14,9 @@ equivalent). Comfort with Python and LLM APIs.
 
 ## Setup — GitHub Codespaces (recommended)
 
-1. Click the button below (or the green **Code** button → **Codespaces** tab → **Create codespace on main**).
+1. Click the button below, or use the green **Code** button → **Codespaces** tab → **Create codespace on main**.
+
+   [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/skillrepos/multi-agent)
 
 2. **Wait for setup to finish.** The codespace installs Python dependencies, installs Ollama, and pulls
    the `llama3.2:3b` model. This takes **3-5 minutes** after the codespace opens. When the terminal
@@ -45,7 +47,8 @@ in Container Volume...** from the command palette and point it at this repo. The
 
 ## Troubleshooting
 
-- **`ollama: command not found`** — the setup script didn't finish. Run `bash scripts/startup_ollama.sh`.
+- **`ollama: command not found`** — the setup script didn't finish. Run `bash scripts/startup_ollama.sh`
+  and watch for errors; it needs `zstd` installed (the script installs it for you).
 - **Model responses hang** — first query after startup loads the model into memory (1-3 minutes).
   Subsequent queries are faster.
 - **`address already in use` when starting an A2A server** — a server from a previous lab is still
