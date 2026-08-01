@@ -1,0 +1,85 @@
+"""
+content_crew.py - Lab 2: A role-based crew with CrewAI
+
+Two agents with distinct roles - a researcher and a writer - collaborate
+on a content pipeline. CrewAI runs the tasks in order and automatically
+passes the researcher's output to the writer as context.
+"""
+
+import os
+import sys
+
+from crewai import LLM, Agent, Crew, Process, Task
+
+
+def get_llm():
+    """Use Groq if GROQ_API_KEY is set; otherwise use local Ollama."""
+    if os.environ.get("GROQ_API_KEY"):
+        return LLM(model="groq/llama-3.1-8b-instant", temperature=0.3)
+    return LLM(model="ollama/" + os.environ.get("OLLAMA_MODEL", "llama3.2:3b"),
+               base_url="http://localhost:11434", temperature=0.3)
+
+
+llm = get_llm()
+
+# ---------------------------------------------------------------
+# Agents - defined by role, goal, and backstory
+# ---------------------------------------------------------------
+
+researcher = Agent(
+    role="Technology Researcher",
+    goal="Gather the key facts a writer would need about {topic}",
+    backstory=("You are a meticulous researcher who values accuracy and "
+               "brevity. You produce tight bullet lists of facts, never "
+               "long essays."),
+    llm=llm,
+    verbose=True,
+)
+
+writer = Agent(
+    role="Technical Writer",
+    goal="Turn research notes into a short, clear summary about {topic}",
+    backstory=("You are a skilled writer who makes technology easy to "
+               "understand without dumbing it down."),
+    llm=llm,
+    verbose=True,
+)
+
+# ---------------------------------------------------------------
+# Tasks - what each agent is asked to produce
+# ---------------------------------------------------------------
+
+research_task = Task(
+    description="Research the topic: {topic}. List 4-5 key facts about it.",
+    expected_output="A bullet list of 4-5 key facts.",
+    agent=researcher,
+)
+
+writing_task = Task(
+    description=("Using the research provided, write a one-paragraph summary "
+                 "(3-4 sentences) about {topic} for a technical newsletter."),
+    expected_output="One paragraph of 3-4 sentences.",
+    agent=writer,
+    context=[research_task],
+)
+
+# ---------------------------------------------------------------
+# Crew - the team plus a process type
+# ---------------------------------------------------------------
+
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, writing_task],
+    process=Process.sequential,
+    verbose=True,
+)
+
+
+if __name__ == "__main__":
+    topic = sys.argv[1] if len(sys.argv) > 1 else "the A2A agent protocol"
+    print(f"TOPIC: {topic}\n")
+    result = crew.kickoff(inputs={"topic": topic})
+    print("\n" + "=" * 60)
+    print("FINAL OUTPUT:")
+    print("=" * 60)
+    print(result)

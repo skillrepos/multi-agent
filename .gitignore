@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments (pysetup.sh creates ./a or ./py_env)
+a/
+py_env/
+.venv/
+venv/
+
+# Presentation decks and other instructor deliverables - distributed
+# separately, not through the student repo
+*.pptx
+*.pptm
+*.potx
+*.key
+
+# Archives / packaged copies of the repo
+*.zip
+*.tar.gz
+
+# Generated docs / exports
+*.pdf
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / local state / secrets
+*.log
+.env

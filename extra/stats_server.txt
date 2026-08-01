@@ -1,0 +1,66 @@
+"""
+stats_server.py - Lab 3: Serving an agent over A2A
+
+This publishes our TextStatsExecutor as a real A2A agent:
+  - an Agent Card at /.well-known/agent-card.json (discovery)
+  - a JSON-RPC 2.0 endpoint at / (communication)
+"""
+
+import uvicorn
+from starlette.applications import Starlette
+
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes
+from a2a.server.tasks import InMemoryTaskStore
+from a2a.types import AgentCapabilities, AgentCard, AgentInterface, AgentSkill
+
+from stats_executor import TextStatsExecutor
+
+# ---------------------------------------------------------------
+# The Agent Card - how other agents discover what this agent can do
+# ---------------------------------------------------------------
+
+skill = AgentSkill(
+    id="text_stats",
+    name="Text Statistics",
+    description="Computes character, word, and length statistics for text.",
+    tags=["text", "statistics", "analysis"],
+    examples=["How many words are in this sentence?"],
+    input_modes=["text/plain"],
+    output_modes=["text/plain"],
+)
+
+card = AgentCard(
+    name="Text Stats Agent",
+    description="A simple agent that analyzes text and returns statistics.",
+    version="1.0.0",
+    default_input_modes=["text/plain"],
+    default_output_modes=["text/plain"],
+    capabilities=AgentCapabilities(streaming=True),
+    supported_interfaces=[
+        AgentInterface(protocol_binding="JSONRPC", url="http://127.0.0.1:9999"),
+    ],
+    skills=[skill],
+)
+
+# ---------------------------------------------------------------
+# The server - SDK request handler + routes on a Starlette app
+# ---------------------------------------------------------------
+
+handler = DefaultRequestHandler(
+    agent_executor=TextStatsExecutor(),
+    task_store=InMemoryTaskStore(),
+    agent_card=card,
+)
+
+routes = []
+routes.extend(create_agent_card_routes(card))       # serves the Agent Card
+routes.extend(create_jsonrpc_routes(handler, "/"))  # serves JSON-RPC methods
+
+app = Starlette(routes=routes)
+
+
+if __name__ == "__main__":
+    print("Starting Text Stats Agent on http://127.0.0.1:9999")
+    print("Agent Card: http://127.0.0.1:9999/.well-known/agent-card.json")
+    uvicorn.run(app, host="127.0.0.1", port=9999)

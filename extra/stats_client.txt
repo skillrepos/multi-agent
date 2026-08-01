@@ -1,0 +1,74 @@
+"""
+stats_client.py - Lab 4: Speaking A2A from the client side
+
+This client:
+  1. discovers the remote agent by fetching its Agent Card
+  2. opens a connection using the card's preferred interface
+  3. sends a message and streams back the task lifecycle events
+  4. fetches the finished task by id afterward
+"""
+
+import asyncio
+
+import httpx
+
+from a2a.client import A2ACardResolver, ClientConfig, create_client
+from a2a.helpers import get_stream_response_text, new_text_message
+from a2a.types import GetTaskRequest, Role, SendMessageRequest
+
+AGENT_URL = "http://127.0.0.1:9999"
+
+
+async def main() -> None:
+    async with httpx.AsyncClient() as httpx_client:
+
+        # 1. Discovery: fetch the Agent Card from the well-known URL
+        resolver = A2ACardResolver(httpx_client=httpx_client, base_url=AGENT_URL)
+        card = await resolver.get_agent_card()
+        print(f"Discovered agent: {card.name} (v{card.version})")
+        for s in card.skills:
+            print(f"  skill: {s.id} - {s.description}")
+        print()
+
+        # 2. Create a client for this agent (transport chosen from the card)
+        client = await create_client(
+            card, ClientConfig(streaming=True, httpx_client=httpx_client))
+
+        # 3. Send a message and stream the task lifecycle events
+        request = SendMessageRequest(
+            message=new_text_message(
+                "The quick brown fox jumps over the lazy dog",
+                role=Role.ROLE_USER))
+
+        task_id = None
+        async for resp in client.send_message(request):
+            kind = resp.WhichOneof("payload")
+            if kind == "task":
+                task_id = resp.task.id
+                print(f"[task]     id={task_id}")
+            elif kind == "status_update":
+                state = resp.status_update.status.state
+                print(f"[status]   {TaskStateName(state)}")
+            elif kind == "artifact_update":
+                print(f"[artifact] {get_stream_response_text(resp)}")
+
+        # 4. Retrieve the finished task by id
+        if task_id:
+            task = await client.get_task(
+                GetTaskRequest(id=task_id, history_length=10))
+            print(f"\nFetched task {task.id} after completion:")
+            print(f"  final state: {TaskStateName(task.status.state)}")
+            print(f"  artifacts:   {len(task.artifacts)}")
+            print(f"  history:     {len(task.history)} messages")
+
+        await client.close()
+
+
+def TaskStateName(state) -> str:
+    """Turn the numeric TaskState enum into a readable name."""
+    from a2a.types import TaskState
+    return TaskState.Name(state).replace("TASK_STATE_", "")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
