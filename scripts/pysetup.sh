@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-PYTHON_ENV=a
+# Create the Python virtual environment and install requirements.
+# Optional arg: the venv directory name (defaults to "a").
+# Updated 08/01/26: honor $1 instead of hardcoding the name.
+PYTHON_ENV="${1:-a}"
 python3 -m venv ./$PYTHON_ENV \
     && export PATH=./$PYTHON_ENV/bin:$PATH \
     && grep -qxF "source $(pwd)/$PYTHON_ENV/bin/activate" ~/.bashrc \

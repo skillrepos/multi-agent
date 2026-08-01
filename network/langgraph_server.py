@@ -59,8 +59,9 @@ def lookup_company(name: str) -> str:
 research_agent = create_agent(
     get_model(),
     tools=[lookup_company],
-    system_prompt=("You are a research specialist. Use the lookup_company "
-                   "tool to find facts. Answer briefly with only the facts."),
+    system_prompt=("You are a research specialist. Call the lookup_company tool "
+                   "once with just the company name, then reply with exactly "
+                   "what the tool returned. Never call the tool more than once."),
 )
 
 

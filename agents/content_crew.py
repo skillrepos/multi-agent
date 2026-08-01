@@ -18,7 +18,9 @@ from crewai import LLM, Agent, Crew, Process, Task
 def get_llm():
     """Use Groq if GROQ_API_KEY is set; otherwise use local Ollama."""
     if os.environ.get("GROQ_API_KEY"):
-        return LLM(model="groq/llama-3.3-70b-versatile", temperature=0.3)
+        return LLM(model="openai/llama-3.3-70b-versatile",
+                   base_url="https://api.groq.com/openai/v1",
+                   api_key=os.environ["GROQ_API_KEY"], temperature=0.3)
     return LLM(model="ollama/" + os.environ.get("OLLAMA_MODEL", "llama3.2:3b"),
                base_url="http://localhost:11434", temperature=0.3)
 

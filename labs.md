@@ -1,13 +1,19 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.1 - 08/01/26
+## Revision 1.2 - 08/01/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until you see "Ollama is ready with model llama3.2:3b" in the terminal before starting Lab 1 (setup takes 3-5 minutes).**
 
 **Notes:**
 1. To copy and paste in the codespace, you may need to use keyboard commands - CTRL+C and CTRL+V (CMD+C and CMD+V on Mac).
 2. Some lab files are *skeletons* - they have TODO markers where code is missing. You'll complete them by merging in code from the completed versions in the **extra** directory using VS Code's diff view (`code -d`). In the diff view, hover over the middle bar between the two files and click the **arrow** next to each highlighted block to copy it into your file. When all blocks are merged, **save the file** (CTRL+S / CMD+S) and close the diff tab.
-3. Labs 1, 2, and 5 call a local LLM (llama3.2:3b via Ollama). Responses can take **30 seconds to 2+ minutes** on a 4-core codespace - be patient, especially on the first query after startup while the model loads. If you have a free Groq API key (https://console.groq.com), you can run `export GROQ_API_KEY=<your key>` in each terminal you use and the labs will automatically use Groq's faster hosted models instead. Either way, the lab steps are identical.
+3. **Recommended: use a free Groq API key.** Labs 1, 2, and 5 call an LLM. Out of the box they use the local llama3.2:3b model via Ollama, which needs no account - but it's a 3B model, so responses take **30 seconds to 2+ minutes** and the answers are often approximate (it may pass a sloppy argument to a tool, or ignore what the tool returned). With a free Groq key those same labs run in **seconds** with reliable answers, which makes the agent behavior far easier to follow. Get a key (no credit card) at https://console.groq.com and run this in **each terminal you use**:
+
+```
+export GROQ_API_KEY=<your key>
+```
+
+Every lab file checks for that variable and switches automatically. **The lab steps are identical either way** - if your instructor has already set it up as a codespace secret, it is set for you and there is nothing to do.
 4. When you need a second terminal, click the **+** icon in the upper right of the terminal panel (or use CTRL+SHIFT+`). New terminals open at the repo root, so `cd` to the right directory.
 
 <br><br>
@@ -51,7 +57,7 @@ code -d ../extra/supervisor_team.txt supervisor_team.py
 python supervisor_team.py
 ```
 
-**This can take a minute or two with the local model - the supervisor makes several LLM calls to plan, delegate, and combine results.**
+**A few seconds on Groq; a minute or two on the local model - the supervisor makes several LLM calls to plan, delegate, and combine results.**
 
 <br>
 
@@ -63,7 +69,7 @@ python supervisor_team.py
 
 7. Look at the **FINAL ANSWER**. The supervisor combined what its two specialists returned into a single response. Note that the supervisor itself never called `lookup_company` or `calculate` directly - those belong to the specialists.
 
-**Focus on the routing, not the facts. With a 3B model the numbers or the city are sometimes wrong - the model may pass a sloppy argument to a tool and then fill in the gap from imagination. That's a model-size limitation, not a flaw in the pattern, and it's the reason production systems validate what comes back from a delegated agent.**
+**Focus on the routing, not the facts.** On Groq the answer should be exactly right (Portland, Oregon and 3600 employees). On the local 3B model the city or the numbers are often wrong - it may pass a sloppy argument to a tool, or ignore what the tool returned and fill the gap from imagination. That's a model-size limitation, not a flaw in the pattern, and it's precisely why production systems validate what comes back from a delegated agent.
 
 <br>
 
@@ -127,13 +133,13 @@ code -d ../extra/content_crew.txt content_crew.py
 
 <br>
 
-4. Run the crew with its default topic (GitHub Codespaces - something the local model knows well, so we can focus on the *handoff* rather than the content):
+4. Run the crew with its default topic (GitHub Codespaces - a topic even the small local model knows well, so we can focus on the *handoff* rather than the content):
 
 ```
 python content_crew.py
 ```
 
-**CrewAI prints banners as each agent starts and finishes. Expect a couple of minutes total with the local model. When the run ends, CrewAI asks "Would you like to view your execution traces? [y/N]" - just press ENTER (or wait 20 seconds) to skip it and get your prompt back.**
+**CrewAI prints banners as each agent starts and finishes. About 5 seconds on Groq; a couple of minutes on the local model. When the run ends, CrewAI asks "Would you like to view your execution traces? [y/N]" - just press ENTER (or wait 20 seconds) to skip it and get your prompt back.**
 
 <br>
 
@@ -447,7 +453,7 @@ code -d ../extra/orchestrator.txt orchestrator.py
 python orchestrator.py
 ```
 
-**Both delegations call the local LLM, so expect 1-3 minutes total. Watch the progress as it prints.**
+**Both delegations call an LLM: about 2 seconds total on Groq, or 1-3 minutes on the local model. Watch the progress as it prints.**
 
 <br>
 
