@@ -18,7 +18,7 @@
         "vscode": {
             "settings": {
                 "python.terminal.activateEnvInCurrentTerminal": true,
-                "python.defaultInterpreterPath": ".venv/bin/python",
+                "python.defaultInterpreterPath": "a/bin/python",
                 "github.copilot.enable": { "*": false },
                 "github.copilot.enableAutoComplete": false,
                 "editor.inlineSuggest.enabled": false,
@@ -32,6 +32,6 @@
             "extensions": ["mathematic.vscode-pdf", "vstirbu.vscode-mermaid-preview"]
         }
     },
-    "postCreateCommand": "bash -i scripts/pysetup.sh py_env && bash -i scripts/startup_ollama.sh",
+    "postCreateCommand": "bash -i scripts/pysetup.sh && bash -i scripts/startup_ollama.sh",
     "postAttachCommand": "bash scripts/startOllama.sh"
 }
