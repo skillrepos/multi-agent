@@ -36,7 +36,7 @@ def get_model():
     """Use Groq if GROQ_API_KEY is set; otherwise use local Ollama."""
     if os.environ.get("GROQ_API_KEY"):
         from langchain_groq import ChatGroq
-        return ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
+        return ChatGroq(model="openai/gpt-oss-120b", temperature=0)
     from langchain_ollama import ChatOllama
     return ChatOllama(model=os.environ.get("OLLAMA_MODEL", "llama3.2:3b"),
                       temperature=0)
@@ -108,7 +108,8 @@ card = AgentCard(
     default_output_modes=["text/plain"],
     capabilities=AgentCapabilities(streaming=True),
     supported_interfaces=[
-        AgentInterface(protocol_binding="JSONRPC", url="http://127.0.0.1:10001"),
+        AgentInterface(protocol_binding="JSONRPC", url="http://127.0.0.1:10001",
+                       protocol_version="1.0"),
     ],
     skills=[
         AgentSkill(

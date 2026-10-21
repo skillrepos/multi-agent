@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 
-**Hands-on workshop — Revision 1.2 — 08/01/26**
+**Hands-on workshop — Revision 1.3 — 10/21/26**
 
 This repository contains the labs, code, and setup for the *Multi-Agent AI Systems & the A2A Protocol*
 workshop. In it, you'll build multi-agent systems with LangGraph and CrewAI, learn Google's A2A
@@ -72,6 +72,13 @@ in Container Volume...** from the command palette and point it at this repo. The
 - **`address already in use` when starting an A2A server** — a server from a previous lab is still
   running. Find and stop it: `kill $(lsof -t -i:9999)` (substitute the port from the error message).
 - **Package errors** — re-run `pip install -r requirements.txt` inside the activated environment.
+- **`401 Invalid API Key` / `expired_api_key` from Groq** — the key in `GROQ_API_KEY` is bad or has
+  expired. The lab code switches to Groq whenever that variable is *set*, so a stale key fails hard
+  instead of falling back. Either export a fresh key or clear the variable to use the local model:
+  `unset GROQ_API_KEY`.
+- **`model_decommissioned` from Groq** — Groq retires models periodically. The labs use
+  `openai/gpt-oss-120b`; if that is ever retired, pick a current tool-calling model from
+  https://console.groq.com/docs/models and change the model name in `get_model()` / `get_llm()`.
 
 ## License
 

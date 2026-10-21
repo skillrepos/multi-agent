@@ -34,7 +34,11 @@ from a2a.types import (AgentCapabilities, AgentCard, AgentInterface,
 def get_llm():
     """Use Groq if GROQ_API_KEY is set; otherwise use local Ollama."""
     if os.environ.get("GROQ_API_KEY"):
-        return LLM(model="openai/llama-3.3-70b-versatile",
+        # CrewAI splits this string once: provider="openai", model="openai/gpt-oss-120b".
+        # The first "openai/" selects CrewAI's native OpenAI-compatible client (CrewAI has
+        # no "groq" provider); the rest is Groq's own model id, which also starts "openai/".
+        # The doubled prefix is correct - do not "simplify" it to one.
+        return LLM(model="openai/openai/gpt-oss-120b",
                    base_url="https://api.groq.com/openai/v1",
                    api_key=os.environ["GROQ_API_KEY"], temperature=0.3)
     return LLM(model="ollama/" + os.environ.get("OLLAMA_MODEL", "llama3.2:3b"),
@@ -106,7 +110,8 @@ card = AgentCard(
     default_output_modes=["text/plain"],
     capabilities=AgentCapabilities(streaming=True),
     supported_interfaces=[
-        AgentInterface(protocol_binding="JSONRPC", url="http://127.0.0.1:10002"),
+        AgentInterface(protocol_binding="JSONRPC", url="http://127.0.0.1:10002",
+                       protocol_version="1.0"),
     ],
     skills=[
         AgentSkill(

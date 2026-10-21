@@ -28,7 +28,7 @@ A: In LangGraph, shared state (the message list, plus any typed fields you add) 
 A: MCP connects an agent to its *tools* (vertical); A2A connects agents to *each other* (horizontal). They're complementary - the official docs' example: a mechanic-agent uses MCP for its diagnostic scanner and A2A to talk to the customer's agent and the parts-supplier's agent. A complete system typically uses both.
 
 **Q: Is A2A a Google product? Do I risk vendor lock-in?**
-A: It started at Google (April 2025) but was donated to the Linux Foundation in June 2025 and now has 150+ member organizations - AWS, Microsoft, IBM, Salesforce, SAP, ServiceNow among them. The v1.0 spec (March 2026) is stable and vendor-neutral, with production support in Azure AI Foundry, Copilot Studio, and AWS Bedrock AgentCore.
+A: It started at Google (April 2025), was donated to the Linux Foundation in June 2025, and since August 2026 has been a hosted project of the Agentic AI Foundation (itself a Linux Foundation body). It now has 150+ member organizations - AWS, Microsoft, IBM, Salesforce, SAP, ServiceNow among them. The v1.0 spec (March 2026) is stable and vendor-neutral, with production support in Azure AI Foundry, Copilot Studio, and AWS Bedrock AgentCore.
 
 **Q: Why did my curl call fail without the A2A-Version header?**
 A: Version negotiation. A v1.0 server assumes the older 0.3 spec when the header is absent and returns a structured VERSION_NOT_SUPPORTED error. Always send `A2A-Version: 1.0` (SDK clients do it for you). You hit this deliberately in Lab 3 step 11.
@@ -37,7 +37,7 @@ A: Version negotiation. A v1.0 server assumes the older 0.3 spec when the header
 A: Those slash-style names are the v0.3 binding. v1.0 unified JSON-RPC method names with the gRPC service as PascalCase (`SendMessage`, `GetTask`, `ListTasks`...). Servers can enable a 0.3 compat mode for older clients, but new code should use v1.0 names.
 
 **Q: What changed in the Agent Card between the versions people blog about and v1.0?**
-A: Two big ones. The well-known path became `/.well-known/agent-card.json` (was `agent.json` before v0.3). And v1.0 replaced the flat `url`/`preferredTransport` fields with a `supportedInterfaces[]` list (url + protocolBinding + optional tenant), plus added `signatures[]` for signed cards.
+A: Two big ones. The well-known path became `/.well-known/agent-card.json` (was `agent.json` before v0.3). And v1.0 replaced the flat `url`/`preferredTransport` fields with a `supportedInterfaces[]` list (url + protocolBinding + protocolVersion, plus an optional tenant), plus added `signatures[]` for signed cards. All three of those interface fields are required - a2a-sdk 1.2+ prints a spec-compliance warning if you leave `protocol_version` off.
 
 **Q: What are the task states, and what are input-required and auth-required for?**
 A: v1.0 states: SUBMITTED, WORKING, COMPLETED, FAILED, CANCELED, REJECTED, INPUT_REQUIRED, AUTH_REQUIRED. The last two make A2A genuinely agentic: INPUT_REQUIRED pauses the task to ask the caller for more information (multi-turn); AUTH_REQUIRED pauses for credentials or human approval - escalation built into the wire protocol.

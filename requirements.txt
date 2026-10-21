@@ -1,15 +1,18 @@
 # =========================================================
 # Multi-Agent AI Systems & the A2A Protocol - dependencies
 # =========================================================
+# Verified end to end on 10/21/26 with:
+#   a2a-sdk 1.2.3 | langchain 1.4.6 | langgraph 1.2.16 | crewai 1.15.28
+#   langchain-ollama 1.1.0 | langchain-groq 1.1.3 | uvicorn 0.54.0
 
 # --- Multi-agent frameworks ---
-langchain>=1.3            # create_agent + tools (LangChain 1.x)
+langchain>=1.4            # create_agent + tools (LangChain 1.x)
 langgraph>=1.2            # graph runtime under LangChain agents
 langchain-ollama>=1.1     # ChatOllama - local model access
-langchain-groq>=1.1       # ChatGroq - optional hosted fallback
+langchain-groq>=1.1       # ChatGroq - hosted models (recommended path)
 crewai>=1.15              # role-based crews
 
 # --- A2A protocol ---
-a2a-sdk[http-server]>=1.1 # official A2A SDK (spec v1.0) + Starlette server
+a2a-sdk[http-server]>=1.2 # official A2A SDK (spec v1.0) + Starlette server
 httpx>=0.27               # async HTTP client used by A2A client
 uvicorn>=0.30             # ASGI server for A2A agent servers

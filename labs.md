@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.2 - 08/01/26
+## Revision 1.3 - 10/21/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until you see "Ollama is ready with model llama3.2:3b" in the terminal before starting Lab 1 (setup takes 3-5 minutes).**
 
@@ -139,7 +139,7 @@ code -d ../extra/content_crew.txt content_crew.py
 python content_crew.py
 ```
 
-**CrewAI prints banners as each agent starts and finishes. About 5 seconds on Groq; a couple of minutes on the local model. When the run ends, CrewAI asks "Would you like to view your execution traces? [y/N]" - just press ENTER (or wait 20 seconds) to skip it and get your prompt back.**
+**CrewAI prints banners as each agent starts and finishes. A few seconds on Groq; about a minute on the local model. At the end CrewAI prints a "Tracing Status" box saying tracing is disabled - that is informational, nothing to do. If you ever run the script with its output piped somewhere, CrewAI may instead ask "Share this execution trace with CrewAI? [y/N]" - press ENTER (or wait 20 seconds) to skip it.**
 
 <br>
 

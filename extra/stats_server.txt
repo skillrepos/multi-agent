@@ -38,7 +38,8 @@ card = AgentCard(
     default_output_modes=["text/plain"],
     capabilities=AgentCapabilities(streaming=True),
     supported_interfaces=[
-        AgentInterface(protocol_binding="JSONRPC", url="http://127.0.0.1:9999"),
+        AgentInterface(protocol_binding="JSONRPC", url="http://127.0.0.1:9999",
+                       protocol_version="1.0"),
     ],
     skills=[skill],
 )
