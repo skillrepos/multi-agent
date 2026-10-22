@@ -443,7 +443,7 @@ code -d ../extra/orchestrator.txt orchestrator.py
 
 <br>
 
-7. Check the orchestrator's imports for a moment: `a2a.client`, `httpx`, `asyncio` - and **no LangGraph, no CrewAI**. The orchestrator is pure protocol.
+7. Check the orchestrator's imports for a moment: `a2a.client`, `httpx`, `asyncio` - and **no LangGraph, no CrewAI**. The orchestrator is pure protocol. Note what A2A did *not* do here: it didn't eliminate orchestration - `main()` still decides who gets called and how results chain. A2A standardized the boundary, so what's *inside* each agent stopped mattering.
 
 <br>
 
