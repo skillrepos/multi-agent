@@ -1,20 +1,15 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.3 - 10/21/26
+## Revision 1.4 - 10/29/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until you see "Ollama is ready with model llama3.2:3b" in the terminal before starting Lab 1 (setup takes 3-5 minutes).**
 
 **Notes:**
 1. To copy and paste in the codespace, you may need to use keyboard commands - CTRL+C and CTRL+V (CMD+C and CMD+V on Mac).
 2. Some lab files are *skeletons* - they have TODO markers where code is missing. You'll complete them by merging in code from the completed versions in the **extra** directory using VS Code's diff view (`code -d`). In the diff view, hover over the middle bar between the two files and click the **arrow** next to each highlighted block to copy it into your file. When all blocks are merged, **save the file** (CTRL+S / CMD+S) and close the diff tab.
-3. **Recommended: use a free Groq API key.** Labs 1, 2, and 5 call an LLM. Out of the box they use the local llama3.2:3b model via Ollama, which needs no account - but it's a 3B model, so responses take **30 seconds to 2+ minutes** and the answers are often approximate (it may pass a sloppy argument to a tool, or ignore what the tool returned). With a free Groq key those same labs run in **seconds** with reliable answers, which makes the agent behavior far easier to follow. Get a key (no credit card) at https://console.groq.com and run this in **each terminal you use**:
-
-```
-export GROQ_API_KEY=<your key>
-```
-
-Every lab file checks for that variable and switches automatically. **The lab steps are identical either way** - if your instructor has already set it up as a codespace secret, it is set for you and there is nothing to do.
+3. **Recommended: a free Groq API key.** Labs 1, 2, and 5 call an AI model. If you set up a Groq key (README steps 4 and 5), they use it automatically in every terminal and answer in **seconds**. Without one they use the local llama3.2:3b model, which needs no account but takes **30 seconds to 2+ minutes** per run and often gets details wrong (it may pass a sloppy argument to a tool, or ignore what the tool returned). **The lab steps are identical either way.** To add a key later, run `source scripts/setup-key.sh` in any terminal.
 4. When you need a second terminal, click the **+** icon in the upper right of the terminal panel (or use CTRL+SHIFT+`). New terminals open at the repo root, so `cd` to the right directory.
+5. **Not using the codespace?** If you set up your own machine with one of the manual setup guides, read the *What looks different* section of that guide first - it covers what to use instead of `code -d` and what you need to do in each new terminal.
 
 <br><br>
 
