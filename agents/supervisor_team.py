@@ -94,7 +94,7 @@ if __name__ == "__main__":
     from team_trace import TeamTracer, get_question
 
     question = get_question("Compare Acme Corp and Globex: which one brings in "
-                            "more revenue per employee, and by how much?")
+                            "more revenue per employee in 2025, and by how much?")
     print(f"\nQUESTION: {question}\n")
     print("The supervisor is delegating to its team (a few seconds with Groq, "
           "a minute or two with the local model)...\n")

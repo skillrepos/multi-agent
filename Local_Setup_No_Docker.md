@@ -220,7 +220,7 @@ Terminal app, `cd ~/multi-agent` first.
 ### 2. Merging code: if `code -d` doesn't work for you
 
 The labs complete each starter file by running `code -d` and clicking arrows in VS Code's side-by-side
-view. If you installed VS Code and its `code` command (steps A3 / B2), this works exactly as in the labs.
+view. If you installed VS Code and its `code` command (steps A3 / B2), this works exactly as in the labs. To also get the short hover explanations on each block, install the workshop's extension once from the `multi-agent` folder: `code --install-extension .devcontainer/merge-info-0.2.0.vsix`
 
 If you use a different editor, or `code -d` won't work, you have two options:
 

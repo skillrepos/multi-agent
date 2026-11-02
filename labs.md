@@ -6,10 +6,12 @@
 
 **Notes:**
 1. To copy and paste in the codespace, you may need to use keyboard commands - CTRL+C and CTRL+V (CMD+C and CMD+V on Mac).
-2. Some lab files are *skeletons* - they have TODO markers where code is missing. You'll complete them by merging in code from the completed versions in the **extra** directory using VS Code's diff view (`code -d`). In the diff view, hover over the middle bar between the two files and click the **arrow** next to each highlighted block to copy it into your file. When all blocks are merged, **save the file** (CTRL+S / CMD+S) and close the diff tab.
+2. Some lab files are *skeletons* - they have TODO markers where code is missing. You'll complete them by merging in code from the completed versions in the **extra** directory using VS Code's diff view (`code -d`). In the diff view, hover over the middle bar between the two files and click the **arrow** next to each highlighted block to copy it into your file. When all blocks are merged, **save the file** (CTRL+S / CMD+S) and close the diff tab. Most blocks also have a short explanation: when you see the yellow comment icon in the left gutter, hover over the highlighted code to read it (example below). Before you merge, the spots in a skeleton file where code will go are highlighted in yellow - hover one to see what belongs there. The highlight disappears once you've merged that block in.
 3. **Recommended: a free Groq API key.** Labs 1, 2, and 5 call an AI model. If you set up a Groq key (README steps 4 and 5), they use it automatically in every terminal and answer in **seconds**. Without one they use the local llama3.2:3b model, which needs no account but takes **30 seconds to 2+ minutes** per run and often gets details wrong (it may pass a sloppy argument to a tool, or ignore what the tool returned). **The lab steps are identical either way.** To add a key later, run `source scripts/setup-key.sh` in any terminal.
 4. When you need a second terminal, click the **+** icon in the upper right of the terminal panel (or use CTRL+SHIFT+`). New terminals open at the repo root, so `cd` to the right directory.
 5. **Not using the codespace?** If you set up your own machine with one of the manual setup guides, read the *What looks different* section of that guide first - it covers what to use instead of `code -d` and what you need to do in each new terminal.
+
+![Merge info hover example](./images/merge-info3.png?raw=true "Merge info hover example")
 
 <br><br>
 
@@ -32,7 +34,7 @@ code supervisor_team.py
 
 <br>
 
-3. Open a diff view against the completed version and merge in each block of missing code. There are three blocks: the **specialist agents** (researcher + analyst, each a full agent with its own tools), the **delegation tools** (`research` and `analyze` - each wraps a specialist so the supervisor can call it like any other tool), and the **supervisor** agent itself. Click the arrow next to each highlighted block to merge it, then **save** and close the diff tab.
+3. Open a diff view against the completed version and merge in each block of missing code. There are three blocks: the **specialist agents** (researcher + analyst, each a full agent with its own tools), the **delegation tools** (`research` and `analyze` - each wraps a specialist so the supervisor can call it like any other tool), and the **supervisor** agent itself. Hover over a block with the yellow gutter icon to see what it does, click the arrow next to each block to merge it, then **save** and close the diff tab.
 
 ```
 code -d ../extra/supervisor_team.txt supervisor_team.py
@@ -46,7 +48,7 @@ code -d ../extra/supervisor_team.txt supervisor_team.py
 
 <br>
 
-5. Run the team and press **Enter** to use the example question: *"Compare Acme Corp and Globex: which one brings in more revenue per employee, and by how much?"* The supervisor has to plan: get each company's figures from the researcher, then hand the numbers to the analyst.
+5. Run the team and press **Enter** to use the example question: *"Compare Acme Corp and Globex: which one brings in more revenue per employee in 2025, and by how much?"* The supervisor has to plan: get each company's figures from the researcher, then hand the numbers to the analyst.
 
 ```
 python supervisor_team.py

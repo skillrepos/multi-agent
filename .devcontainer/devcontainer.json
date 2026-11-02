@@ -18,6 +18,7 @@
         "vscode": {
             "settings": {
                 "python.terminal.activateEnvInCurrentTerminal": true,
+                "mergeInfo.skeletonHighlights": true,
                 "security.workspace.trust.enabled": false,
                 "github.copilot.enable": { "*": false },
                 "github.copilot.enableAutoComplete": false,
@@ -33,5 +34,8 @@
         }
     },
     "postCreateCommand": "bash -i scripts/pysetup.sh && bash -i scripts/startup_ollama.sh",
-    "postAttachCommand": "bash scripts/startOllama.sh"
+    "postAttachCommand": {
+        "ollama": "bash scripts/startOllama.sh",
+        "merge-info": "nohup bash -c 'for i in 1 2 3 4 5 6; do code --install-extension ${containerWorkspaceFolder}/.devcontainer/merge-info-0.2.0.vsix --force && break; sleep 10; done' >/tmp/merge-info-install.log 2>&1 &"
+    }
 }

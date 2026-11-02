@@ -1,0 +1,359 @@
+{
+  "files": {
+    "extra/supervisor_team.txt": [
+      {
+        "anchor": "researcher = create_agent(",
+        "lines": 14,
+        "title": "Specialist agents",
+        "note": [
+          "**Two full agents, each with a small toolset and a narrow job.**",
+          "- The researcher can only look things up; the analyst can only calculate",
+          "- Small jobs keep each agent easier to test and less confused"
+        ]
+      },
+      {
+        "anchor": "def research(query: str) -> str:",
+        "lines": 11,
+        "title": "Delegation tools",
+        "note": [
+          "**Each tool runs a whole specialist agent and returns its final answer.**",
+          "- This is the supervisor pattern: agents wrapped as tools",
+          "- The supervisor can't tell a teammate from a plain tool"
+        ]
+      },
+      {
+        "anchor": "supervisor = create_agent(",
+        "title": "The supervisor agent",
+        "note": [
+          "**Coordinates the team - its only tools are the two delegation tools.**",
+          "- It plans and routes; it never touches lookup_company or calculate",
+          "- The prompt sets the order: facts first, then the math"
+        ]
+      }
+    ],
+    "extra/content_crew.txt": [
+      {
+        "anchor": "analyst = Agent(",
+        "title": "Company Analyst agent",
+        "note": [
+          "**A CrewAI agent: role, goal, and backstory, plus the tools it may use.**",
+          "- Which tools it calls, and how often, is the agent's choice",
+          "- {request} is filled in when the crew starts"
+        ]
+      },
+      {
+        "anchor": "writer = Agent(",
+        "title": "Business Writer agent",
+        "note": [
+          "**The second agent: it writes, after checking the house style guide.**",
+          "- Its only tool is get_style_guide"
+        ]
+      },
+      {
+        "anchor": "analysis_task = Task(",
+        "title": "Analysis task",
+        "note": [
+          "**What the analyst is asked to produce.**",
+          "- expected_output tells the agent what 'done' looks like"
+        ]
+      },
+      {
+        "anchor": "writing_task = Task(",
+        "title": "Writing task and handoff",
+        "note": [
+          "**context=[analysis_task] pipes the analyst's findings into the writer's prompt.**",
+          "- That's the handoff between the two agents"
+        ]
+      },
+      {
+        "anchor": "crew = Crew(",
+        "title": "The crew",
+        "note": [
+          "**Puts agents and tasks together; Process.sequential runs the tasks in list order.**",
+          "- The order is fixed - the agentic part is each agent's tool choices"
+        ]
+      }
+    ],
+    "extra/analyst_executor.txt": [
+      {
+        "anchor": "# 2. Tell the client we've started (task state: WORKING)",
+        "lines": 4,
+        "title": "Report WORKING",
+        "note": [
+          "**The task's first status update: the client learns work has started.**"
+        ]
+      },
+      {
+        "anchor": "# 3. Run the agent step by step",
+        "endAnchor": "return",
+        "title": "Stream the agent's steps",
+        "note": [
+          "**Runs the agent step by step, sending a WORKING update for every tool it calls.**",
+          "- astream hands back each step as the agent works",
+          "- An error ends the task as FAILED - a state, not a crash"
+        ]
+      },
+      {
+        "anchor": "# 4. Publish the answer as an artifact",
+        "lines": 4,
+        "title": "Deliver the result",
+        "note": [
+          "**The answer becomes an artifact, then the task is marked COMPLETED.**",
+          "- You'll watch these events stream live in Lab 4"
+        ]
+      }
+    ],
+    "extra/analyst_server.txt": [
+      {
+        "anchor": "skill = AgentSkill(",
+        "title": "The agent's skill",
+        "note": [
+          "**Describes what this agent can do - other agents read this to decide to use it.**",
+          "- Tags and examples help clients (and AI orchestrators) match it"
+        ]
+      },
+      {
+        "anchor": "card = AgentCard(",
+        "title": "The Agent Card",
+        "note": [
+          "**The agent's public contract: name, version, capabilities, skills, and where to reach it.**",
+          "- supported_interfaces says 'JSON-RPC at port 9999'",
+          "- protocol_version 1.0 must match the A2A-Version header"
+        ]
+      },
+      {
+        "anchor": "handler = DefaultRequestHandler(",
+        "endAnchor": "app = Starlette(routes=routes)",
+        "title": "Server wiring",
+        "note": [
+          "**The SDK's request handler plus two sets of routes: the card, and the JSON-RPC methods.**",
+          "- InMemoryTaskStore is why GetTask still works after a task finishes"
+        ]
+      }
+    ],
+    "extra/analyst_client.txt": [
+      {
+        "anchor": "resolver = A2ACardResolver(httpx_client=httpx_client, base_url=AGENT_URL)",
+        "title": "1. Discover",
+        "note": [
+          "**Fetches the Agent Card from the well-known URL - the same JSON you curled in Lab 3.**"
+        ]
+      },
+      {
+        "anchor": "client = await create_client(",
+        "title": "2. Connect",
+        "note": [
+          "**Builds a client from the card; the SDK picks the transport the card lists.**",
+          "- Our code never mentions JSON-RPC"
+        ]
+      },
+      {
+        "anchor": "request = SendMessageRequest(",
+        "endAnchor": "print(f\"[artifact] {get_stream_response_text(resp)}\")",
+        "title": "3. Send and stream",
+        "note": [
+          "**Sends the question and prints each event as it arrives.**",
+          "- Status updates carry the agent's progress messages",
+          "- streaming=True is what makes them arrive live (step 9)"
+        ]
+      },
+      {
+        "anchor": "if task_id:",
+        "title": "4. Retrieve",
+        "note": [
+          "**Fetches the finished task by id - anything holding the id can do this later.**"
+        ]
+      }
+    ],
+    "extra/orchestrator.txt": [
+      {
+        "anchor": "cards = []",
+        "title": "Step 1: discover",
+        "note": [
+          "**Fetches every agent's card from its well-known URL.**",
+          "- In production this list could come from a registry"
+        ]
+      },
+      {
+        "anchor": "tools, owners = [], {}",
+        "title": "Step 2: cards become tools",
+        "note": [
+          "**Turns each skill on each card into a tool the model can choose.**",
+          "- The description comes straight from the card - that's how the model 'reads' it",
+          "- owners remembers which card to call for each tool"
+        ]
+      },
+      {
+        "anchor": "client = await create_client(",
+        "title": "Step 3: delegate",
+        "note": [
+          "**Sends a task to the chosen agent over A2A and collects its answer.**",
+          "- The same client calls you wrote in Lab 4"
+        ]
+      }
+    ]
+  },
+  "skeletons": {
+    "agents/supervisor_team.py": [
+      {
+        "anchor": "# TODO: Lab 1 - create the researcher and analyst specialist agents",
+        "done": "researcher = create_agent(",
+        "title": "Specialist agents",
+        "note": [
+          "**Two full agents, each with a small toolset and a narrow job.**",
+          "- The researcher can only look things up; the analyst can only calculate",
+          "- Small jobs keep each agent easier to test and less confused"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 1 - create the research and analyze delegation tools",
+        "done": "def research(query: str) -> str:",
+        "title": "Delegation tools",
+        "note": [
+          "**Each tool runs a whole specialist agent and returns its final answer.**",
+          "- This is the supervisor pattern: agents wrapped as tools",
+          "- The supervisor can't tell a teammate from a plain tool"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 1 - create the supervisor agent",
+        "done": "supervisor = create_agent(",
+        "title": "The supervisor agent",
+        "note": [
+          "**Coordinates the team - its only tools are the two delegation tools.**",
+          "- It plans and routes; it never touches lookup_company or calculate",
+          "- The prompt sets the order: facts first, then the math"
+        ]
+      }
+    ],
+    "agents/content_crew.py": [
+      {
+        "anchor": "# TODO: Lab 2 - define the analyst and writer agents",
+        "done": "analyst = Agent(",
+        "title": "Analyst and writer agents",
+        "note": [
+          "**Both agents go here: an analyst with lookup tools, and a writer with the style guide.**",
+          "- Each is a role, goal, and backstory, plus its own tools"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 2 - define the analysis and writing tasks",
+        "done": "analysis_task = Task(",
+        "title": "Analysis and writing tasks",
+        "note": [
+          "**Both tasks go here - the writing task's context=[...] is the handoff.**",
+          "- expected_output tells each agent what 'done' looks like"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 2 - assemble the crew",
+        "done": "crew = Crew(",
+        "title": "The crew",
+        "note": [
+          "**Puts agents and tasks together; Process.sequential runs the tasks in list order.**",
+          "- The order is fixed - the agentic part is each agent's tool choices"
+        ]
+      }
+    ],
+    "protocol/analyst_executor.py": [
+      {
+        "anchor": "# TODO: Lab 3 - report WORKING, run the agent step by step (a progress",
+        "done": "# 2. Tell the client we've started (task state: WORKING)",
+        "title": "The executor's work",
+        "note": [
+          "**Everything the executor does goes here: WORKING, the agent's steps, then the result.**",
+          "- Each tool call becomes a progress update",
+          "- Ends COMPLETED with an artifact - or FAILED on error"
+        ],
+        "lines": 3
+      }
+    ],
+    "protocol/analyst_server.py": [
+      {
+        "anchor": "# TODO: Lab 3 - define the AgentSkill and AgentCard",
+        "done": "skill = AgentSkill(",
+        "title": "The agent's skill",
+        "note": [
+          "**Describes what this agent can do - other agents read this to decide to use it.**",
+          "- Tags and examples help clients (and AI orchestrators) match it"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 3 - create the request handler, routes, and app",
+        "done": "handler = DefaultRequestHandler(",
+        "title": "Server wiring",
+        "note": [
+          "**The SDK's request handler plus two sets of routes: the card, and the JSON-RPC methods.**",
+          "- InMemoryTaskStore is why GetTask still works after a task finishes"
+        ]
+      }
+    ],
+    "protocol/analyst_client.py": [
+      {
+        "anchor": "# TODO: Lab 4 - resolve the Agent Card and print its skills",
+        "done": "resolver = A2ACardResolver(httpx_client=httpx_client, base_url=AGENT_URL)",
+        "title": "1. Discover",
+        "note": [
+          "**Fetches the Agent Card from the well-known URL - the same JSON you curled in Lab 3.**"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 4 - create the A2A client",
+        "done": "client = await create_client(",
+        "title": "2. Connect",
+        "note": [
+          "**Builds a client from the card; the SDK picks the transport the card lists.**",
+          "- Our code never mentions JSON-RPC"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 4 - send the question and print the streamed events",
+        "done": "request = SendMessageRequest(",
+        "title": "3. Send and stream",
+        "note": [
+          "**Sends the question and prints each event as it arrives.**",
+          "- Status updates carry the agent's progress messages",
+          "- streaming=True is what makes them arrive live (step 9)"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 4 - fetch the task with get_task and print a summary",
+        "done": "if task_id:",
+        "title": "4. Retrieve",
+        "note": [
+          "**Fetches the finished task by id - anything holding the id can do this later.**"
+        ]
+      }
+    ],
+    "network/orchestrator.py": [
+      {
+        "anchor": "# TODO: Lab 5 - fetch and return the Agent Cards",
+        "done": "cards = []",
+        "title": "Step 1: discover",
+        "note": [
+          "**Fetches every agent's card from its well-known URL.**",
+          "- In production this list could come from a registry"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 5 - build a tool for every skill, and remember which card owns it",
+        "done": "tools, owners = [], {}",
+        "title": "Step 2: cards become tools",
+        "note": [
+          "**Turns each skill on each card into a tool the model can choose.**",
+          "- The description comes straight from the card - that's how the model 'reads' it",
+          "- owners remembers which card to call for each tool"
+        ]
+      },
+      {
+        "anchor": "# TODO: Lab 5 - create a client, send the message, collect artifacts",
+        "done": "client = await create_client(",
+        "title": "Step 3: delegate",
+        "note": [
+          "**Sends a task to the chosen agent over A2A and collects its answer.**",
+          "- The same client calls you wrote in Lab 4"
+        ]
+      }
+    ]
+  }
+}
