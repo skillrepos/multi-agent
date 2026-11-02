@@ -1,11 +1,21 @@
 """
-team_trace.py - helper for Lab 1 (you don't need to edit or study this file)
+team_trace.py - helper for Lab 1 (nothing to edit here)
 
 Two conveniences for supervisor_team.py:
   - get_question(): take the question from the command line, or ask for one
-  - TeamTracer:     record every tool call made while the team works - including
-                    the calls the specialists make *inside* the delegation tools -
-                    and print them as a readable "who did what" trace
+  - TeamTracer:     record what the team did and print a "who did what" trace
+
+Why TeamTracer is needed: the supervisor's own message history only shows its
+calls to the research and analyze tools. The specialists do their work INSIDE
+those tools, so their tool calls never appear there.
+
+How it works: TeamTracer is a LangChain *callback* - an object LangChain
+notifies at every step of a run (a model call starting, a tool starting or
+finishing). supervisor_team.py passes it in with config={"callbacks": [tracer]},
+and LangChain hands it on to every agent that runs underneath, specialists
+included. The tracer notes each tool call and which delegation it happened
+inside, then print_trace() lays them out as the MESSAGE TRACE. Production
+observability tools collect their traces the same way.
 """
 
 import sys
@@ -98,7 +108,7 @@ class TeamTracer(BaseCallbackHandler):
         print(line)
         print("MESSAGE TRACE (who did what):")
         print(line)
-        print(f"USER asks the SUPERVISOR: {_one_line(question)}\n")
+        print(f"USER asked the SUPERVISOR: {_one_line(question)}\n")
 
         supervisor_tools, specialist_tools = [], []
         for rid in self.order:
@@ -108,22 +118,22 @@ class TeamTracer(BaseCallbackHandler):
             supervisor_tools.append(call["name"])
             who = self.delegations.get(call["name"])
             if who is None:
-                print(f"SUPERVISOR uses {call['name']}({call['args']})")
+                print(f"SUPERVISOR used {call['name']}({call['args']})")
                 print(f"    -> {_one_line(call['output'])}\n")
                 continue
 
-            print(f"SUPERVISOR delegates to the {who} (through the '{call['name']}' tool): {call['args']}")
+            print(f"SUPERVISOR delegated to the {who} (through the '{call['name']}' tool): {call['args']}")
             inner = [r for r in self.order if self._delegation_above(r) == rid]
             if not inner:
                 print(f"    {who} answered WITHOUT using any of its tools")
             for r in inner:
                 sub = self.tools[r]
                 specialist_tools.append(sub["name"])
-                print(f"    {who} uses {sub['name']}({sub['args']})")
+                print(f"    {who} used {sub['name']}({sub['args']})")
                 print(f"        -> {_one_line(sub['output'])}")
-            print(f"    {who} reports back: {_one_line(call['output'])}\n")
+            print(f"    {who} reported back: {_one_line(call['output'])}\n")
 
-        print("SUPERVISOR combines the reports into one final answer.")
+        print("SUPERVISOR combined the reports into one final answer.")
         print(line)
         unique = lambda names: ", ".join(dict.fromkeys(names)) or "(none)"
         print(f"Tools the SUPERVISOR called itself:  {unique(supervisor_tools)}")

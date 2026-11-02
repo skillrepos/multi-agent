@@ -9,13 +9,13 @@ framework (LangGraph, CrewAI, ...).
 
 PROFILES = {
     "acme corp": ("Acme Corp is headquartered in Portland, Oregon and makes outdoor "
-                  "camping gear. It has 1200 employees. Revenue: $120 million in 2022, "
+                  "camping gear. It has 1200 employees. Revenue: $160 million in 2024, "
                   "$180 million in 2025."),
     "globex": ("Globex is headquartered in Berlin, Germany and makes industrial "
-               "robots. It has 5400 employees. Revenue: $820 million in 2022, "
+               "robots. It has 5400 employees. Revenue: $900 million in 2024, "
                "$950 million in 2025."),
     "initech": ("Initech is headquartered in Austin, Texas and makes payroll "
-                "software. It has 350 employees. Revenue: $40 million in 2022, "
+                "software. It has 350 employees. Revenue: $70 million in 2024, "
                 "$95 million in 2025."),
 }
 
@@ -78,7 +78,7 @@ def get_style_guide(audience: str) -> str:
 
 def calculate(expression: str) -> str:
     """Evaluate an arithmetic expression exactly, e.g. '950000000 / 5400' or a
-    yearly growth rate like '(95 / 40) ** (1 / 3) - 1'."""
+    growth rate like '(95 - 70) / 70'."""
     allowed = set("0123456789+-*/(). ")
     if not set(expression) <= allowed:
         return "Only basic arithmetic is supported."

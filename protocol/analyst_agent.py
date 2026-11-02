@@ -41,7 +41,7 @@ def get_news(company: str) -> str:
 
 @tool
 def calculate(expression: str) -> str:
-    """Evaluate arithmetic exactly, e.g. '950000000 / 5400' or '(95 / 40) ** (1 / 3) - 1'."""
+    """Evaluate arithmetic exactly, e.g. '950000000 / 5400' or '(95 - 70) / 70'."""
     return data.calculate(expression)
 
 

@@ -30,11 +30,11 @@ code supervisor_team.py
 
 <br>
 
-2. Scroll through the file. Already there: a `get_model()` function that picks Groq or local Ollama, and two plain tools - `lookup_company` (a small private knowledge base) and `calculate`. *Missing* (the TODO sections) are the agents themselves. (`team_trace.py` next to it just prints the trace - no need to open it.) Close the file. **This file won't run yet.**
+2. Scroll through the file. Already there: a `get_model()` function that picks Groq or local Ollama, and two plain tools - `lookup_company` (a small private knowledge base) and `calculate`. *Missing* (the TODO sections) are the agents themselves. (`team_trace.py` next to it prints the trace you'll read in step 6.) Close the file. **This file won't run yet.**
 
 <br>
 
-3. Open a diff view against the completed version and merge in each block of missing code. There are three blocks: the **specialist agents** (researcher + analyst, each a full agent with its own tools), the **delegation tools** (`research` and `analyze` - each wraps a specialist so the supervisor can call it like any other tool), and the **supervisor** agent itself. Hover over a block with the yellow gutter icon to see what it does, click the arrow next to each block to merge it, then **save** and close the diff tab.
+3. Merge in the three missing blocks: the **specialist agents** (researcher and analyst), the **delegation tools** (`research` and `analyze`, each wrapping a specialist), and the **supervisor**. Hover over a block with the yellow gutter icon to see what it does, click its arrow to merge it, then **save** and close the diff tab.
 
 ```
 code -d ../extra/supervisor_team.txt supervisor_team.py
@@ -44,11 +44,11 @@ code -d ../extra/supervisor_team.txt supervisor_team.py
 
 <br>
 
-4. Look at the merged code for the delegation tools. This is the heart of the supervisor pattern: `research` is just a function with the `@tool` decorator, but inside it *invokes a complete agent* and returns that agent's final message. The supervisor can't tell the difference between a simple tool and a whole team member.
+4. Look at the merged delegation tools - the heart of the supervisor pattern. `research` is just a `@tool` function, but inside it *runs a complete agent* and returns that agent's final message. The supervisor can't tell a simple tool from a whole team member.
 
 <br>
 
-5. Run the team and press **Enter** to use the example question: *"Compare Acme Corp and Globex: which one brings in more revenue per employee in 2025, and by how much?"* The supervisor has to plan: get each company's figures from the researcher, then hand the numbers to the analyst.
+5. Run the team and press **Enter** to use the example question: *"Compare Acme Corp and Globex: which one brought in more revenue per employee in 2025, and by how much?"* The supervisor has to plan: get each company's figures from the researcher, then hand the numbers to the analyst.
 
 ```
 python supervisor_team.py
@@ -58,7 +58,9 @@ python supervisor_team.py
 
 <br>
 
-6. Look at the **MESSAGE TRACE**. The SUPERVISOR delegates to the RESEARCHER (usually once per company); the indented lines are the researcher's own work - it uses `lookup_company`, then reports back. Then the SUPERVISOR sends the numbers to the ANALYST, which uses `calculate`.
+6. Look at the **MESSAGE TRACE**. The SUPERVISOR delegated to the RESEARCHER (usually once per company); the indented lines are the researcher's own work - it used `lookup_company`, then reported back. Then the SUPERVISOR sent the numbers to the ANALYST, which used `calculate`.
+
+**How can we see inside the specialists?** The supervisor's own messages can't - the specialists ran inside its tools. So the script passed a `TeamTracer` (from `team_trace.py`) to the run as a *callback*, and LangChain reported every step to it, specialists included. The comments at the top of `team_trace.py` explain how it works.
 
 <!-- SCREENSHOT TO RETAKE: images/maa2a-1-2.png - new MESSAGE TRACE format (example question, Groq) -->
 
@@ -66,17 +68,17 @@ python supervisor_team.py
 
 7. Check the two summary lines under the trace: the supervisor called only `research` and `analyze`; only the specialists used `lookup_company` and `calculate`. The supervisor routes - it never touches the low-level tools. Then read the **FINAL ANSWER**.
 
-**Focus on the routing, not the facts.** On Groq the answer should be right: Globex earns about $175,926 per employee versus Acme Corp's $150,000. The analyst used a tool for that division because models are unreliable at exact arithmetic. The local 3B model often gets details wrong, or skips a tool and makes something up (the trace then says the specialist *answered WITHOUT using any of its tools*) - a model-size limit, and exactly why production systems validate what delegated agents return.
+**Focus on the routing, not the facts.** On Groq the answer should be right: Globex earned about $175,926 per employee versus Acme Corp's $150,000 - divided by a tool, because models are unreliable at exact arithmetic. The local 3B model often gets details wrong or skips a tool (the trace then says the specialist *answered WITHOUT using any of its tools*) - a model-size limit, and why production systems validate what delegated agents return.
 
 <br>
 
 8. Ask a different question - typed at the prompt, or on the command line:
 
 ```
-python supervisor_team.py "Which grew revenue faster from 2022 to 2025, Acme Corp or Initech? Give each one's yearly growth rate."
+python supervisor_team.py "Which grew revenue faster from 2024 to 2025, Acme Corp or Initech? Give each one's growth rate."
 ```
 
-The researcher should look up both companies, and the analyst should calculate a compound growth rate for each (on Groq: about 14.5% a year for Acme Corp, 33.4% for Initech). **If the local model mis-routes a step, just run it again.**
+The researcher should look up both companies, and the analyst should calculate the growth rate for each (on Groq: 12.5% for Acme Corp, about 35.7% for Initech). **If the local model mis-routes a step, just run it again.**
 
 <br>
 
@@ -133,7 +135,7 @@ python content_crew.py
 
 <br>
 
-5. Watch the **Company Analyst** work. CrewAI shows a *Tool Execution* box for each tool the analyst chooses - expect `lookup_company` and `get_news` for Initech, and `calculate` for a figure like yearly revenue growth. Then it prints its bullet list.
+5. Watch the **Company Analyst** work. CrewAI shows a *Tool Execution* box for each tool the analyst chooses - expect `lookup_company` and `get_news` for Initech, and `calculate` for a figure like revenue growth from 2024 to 2025. Then it prints its bullet list.
 
 <!-- SCREENSHOT TO RETAKE: images/maa2a-2-1.png - analyst's tool executions (Groq) -->
 

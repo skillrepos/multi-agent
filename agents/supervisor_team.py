@@ -36,13 +36,13 @@ model = get_model()
 # A small private knowledge base - facts the model can't know on its own
 COMPANY_FACTS = {
     "acme corp": ("Acme Corp is headquartered in Portland, Oregon and makes outdoor "
-                  "camping gear. It has 1200 employees. Revenue: $120 million in 2022, "
+                  "camping gear. It has 1200 employees. Revenue: $160 million in 2024, "
                   "$180 million in 2025."),
     "globex": ("Globex is headquartered in Berlin, Germany and makes industrial "
-               "robots. It has 5400 employees. Revenue: $820 million in 2022, "
+               "robots. It has 5400 employees. Revenue: $900 million in 2024, "
                "$950 million in 2025."),
     "initech": ("Initech is headquartered in Austin, Texas and makes payroll "
-                "software. It has 350 employees. Revenue: $40 million in 2022, "
+                "software. It has 350 employees. Revenue: $70 million in 2024, "
                 "$95 million in 2025."),
 }
 
@@ -57,7 +57,7 @@ def lookup_company(name: str) -> str:
 @tool
 def calculate(expression: str) -> str:
     """Evaluate an arithmetic expression exactly, e.g. '180000000 / 1200' or a
-    yearly growth rate like '(180 / 120) ** (1 / 3) - 1'."""
+    growth rate like '(180 - 160) / 160'."""
     allowed = set("0123456789+-*/(). ")
     if not set(expression) <= allowed:
         return "Only basic arithmetic is supported."
@@ -90,15 +90,17 @@ def calculate(expression: str) -> str:
 
 if __name__ == "__main__":
     # The question comes from the command line, or you're asked for one.
-    # (team_trace.py is a small helper - it prints the "who did what" trace.)
     from team_trace import TeamTracer, get_question
 
-    question = get_question("Compare Acme Corp and Globex: which one brings in "
+    question = get_question("Compare Acme Corp and Globex: which one brought in "
                             "more revenue per employee in 2025, and by how much?")
     print(f"\nQUESTION: {question}\n")
     print("The supervisor is delegating to its team (a few seconds with Groq, "
           "a minute or two with the local model)...\n")
 
+    # The supervisor's own messages can't show the specialists' work - it
+    # happens inside the research and analyze tools. Passing a TeamTracer as a
+    # callback lets LangChain report every step to it, specialists included.
     tracer = TeamTracer({"research": "RESEARCHER", "analyze": "ANALYST"})
     result = supervisor.invoke({"messages": [{"role": "user", "content": question}]},
                                config={"callbacks": [tracer]})
