@@ -19,6 +19,7 @@
             "settings": {
                 "python.terminal.activateEnvInCurrentTerminal": true,
                 "mergeInfo.skeletonHighlights": true,
+                "files.autoSave": "afterDelay",
                 "security.workspace.trust.enabled": false,
                 "github.copilot.enable": { "*": false },
                 "github.copilot.enableAutoComplete": false,
