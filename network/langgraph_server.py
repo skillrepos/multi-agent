@@ -1,14 +1,14 @@
 """
 langgraph_server.py - Lab 5: A LangGraph agent exposed over A2A
 
-This wraps a LangGraph research agent (like the one from Lab 1) in an
-A2A AgentExecutor and serves it on port 10001. Other agents don't know
+This wraps a LangGraph research agent (like the researcher from Lab 1) in
+an A2A AgentExecutor and serves it on port 10001. The agent decides which
+of its tools to use - company profiles, news, or both. Other agents don't know
 or care that LangGraph is inside - they only see the Agent Card.
 
 This file is provided complete - no merge needed.
 """
 
-import asyncio
 import os
 
 import uvicorn
@@ -16,6 +16,8 @@ from starlette.applications import Starlette
 
 from langchain.agents import create_agent
 from langchain.tools import tool
+
+import company_data as data
 
 from a2a.helpers import (get_message_text, new_task_from_user_message,
                          new_text_message, new_text_part)
@@ -42,26 +44,25 @@ def get_model():
                       temperature=0)
 
 
-COMPANY_FACTS = {
-    "acme corp": "Acme Corp is headquartered in Portland, Oregon and has 1200 employees.",
-    "globex": "Globex is headquartered in Berlin, Germany and has 5400 employees. It makes industrial robots.",
-    "initech": "Initech is headquartered in Austin, Texas and has 350 employees.",
-}
+@tool
+def lookup_company(name: str) -> str:
+    """Profile and financials for one company (Acme Corp, Globex, or Initech)."""
+    return data.lookup_company(name)
 
 
 @tool
-def lookup_company(name: str) -> str:
-    """Look up facts about a company by name."""
-    return COMPANY_FACTS.get(name.strip().lower(),
-                             f"No information found for {name}.")
+def get_news(company: str) -> str:
+    """Recent news headlines for one company (Acme Corp, Globex, or Initech)."""
+    return data.get_news(company)
 
 
 research_agent = create_agent(
     get_model(),
-    tools=[lookup_company],
-    system_prompt=("You are a research specialist. Call the lookup_company tool "
-                   "once with just the company name, then reply with exactly "
-                   "what the tool returned. Never call the tool more than once."),
+    tools=[lookup_company, get_news],
+    system_prompt=("You are a company researcher. Use lookup_company for profiles "
+                   "and financials and get_news for recent events - whichever the "
+                   "request needs. Report what you found as short bullet points "
+                   "with numbers. Use only facts your tools return."),
 )
 
 
@@ -82,11 +83,27 @@ class LangGraphResearchExecutor(AgentExecutor):
             state=TaskState.TASK_STATE_WORKING,
             message=new_text_message("Researching with LangGraph..."))
 
+        # Run the agent step by step, reporting each tool it decides to call
         query = get_message_text(context.message)
-        result = await asyncio.to_thread(
-            research_agent.invoke,
-            {"messages": [{"role": "user", "content": query}]})
-        answer = result["messages"][-1].content
+        answer = ""
+        try:
+            async for step in research_agent.astream(
+                    {"messages": [{"role": "user", "content": query}]},
+                    stream_mode="updates"):
+                for node, update in step.items():
+                    for msg in (update or {}).get("messages", []):
+                        for call in getattr(msg, "tool_calls", None) or []:
+                            args = ", ".join(str(v) for v in call["args"].values())
+                            await updater.update_status(
+                                state=TaskState.TASK_STATE_WORKING,
+                                message=new_text_message(f"Calling {call['name']}({args})"))
+                        if node == "model" and msg.content and not msg.tool_calls:
+                            answer = msg.content
+        except Exception as err:
+            await updater.update_status(
+                state=TaskState.TASK_STATE_FAILED,
+                message=new_text_message(f"The agent failed: {err}"))
+            return
 
         await updater.add_artifact(
             parts=[new_text_part(text=answer, media_type="text/plain")])
@@ -102,7 +119,7 @@ class LangGraphResearchExecutor(AgentExecutor):
 
 card = AgentCard(
     name="Company Research Agent (LangGraph)",
-    description="Looks up facts about companies. Built with LangGraph.",
+    description="Researches companies - profile, financials, and recent news. Built with LangGraph.",
     version="1.0.0",
     default_input_modes=["text/plain"],
     default_output_modes=["text/plain"],
@@ -115,9 +132,11 @@ card = AgentCard(
         AgentSkill(
             id="company_research",
             name="Company Research",
-            description="Finds facts about companies: location, size, business.",
-            tags=["research", "companies", "facts"],
-            examples=["Tell me about Globex."],
+            description=("Researches Acme Corp, Globex, or Initech: profile, "
+                         "financials, and recent news. Say which company and "
+                         "what you need to know."),
+            tags=["research", "companies", "news"],
+            examples=["Get Globex's profile, financials, and recent news."],
             input_modes=["text/plain"],
             output_modes=["text/plain"],
         ),

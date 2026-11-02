@@ -1,9 +1,11 @@
 """
 content_crew.py - Lab 2: A role-based crew with CrewAI
 
-Two agents with distinct roles - a researcher and a writer - collaborate
-on a content pipeline. CrewAI runs the tasks in order and automatically
-passes the researcher's output to the writer as context.
+Two agents with distinct roles work through a business request:
+  - a Company Analyst gathers facts and figures, choosing which tools to use
+  - a Business Writer checks the house style guide, then writes the piece
+CrewAI runs the two tasks in a fixed order and passes the analyst's output
+to the writer. Inside each task, the agent decides its own tool calls.
 
 NOTE: This file is incomplete - you'll merge in the working code
 during the lab. It won't run until then.
@@ -13,6 +15,9 @@ import os
 import sys
 
 from crewai import LLM, Agent, Crew, Process, Task
+from crewai.tools import tool
+
+import company_data as data
 
 
 def get_llm():
@@ -32,17 +37,45 @@ def get_llm():
 llm = get_llm()
 
 # ---------------------------------------------------------------
-# Agents - defined by role, goal, and backstory
+# Tools - the agents' access to private business data
 # ---------------------------------------------------------------
 
-# TODO: Lab 2 - define the researcher and writer agents
+@tool("lookup_company")
+def lookup_company(name: str) -> str:
+    """Profile and financials for one company (Acme Corp, Globex, or Initech)."""
+    return data.lookup_company(name)
+
+
+@tool("get_news")
+def get_news(company: str) -> str:
+    """Recent news headlines for one company (Acme Corp, Globex, or Initech)."""
+    return data.get_news(company)
+
+
+@tool("calculate")
+def calculate(expression: str) -> str:
+    """Evaluate arithmetic exactly, e.g. '950000000 / 5400' or '(95 / 40) ** (1 / 3) - 1'."""
+    return data.calculate(expression)
+
+
+@tool("get_style_guide")
+def get_style_guide(audience: str) -> str:
+    """House writing rules for an audience: board, investor, or engineering."""
+    return data.get_style_guide(audience)
+
+
+# ---------------------------------------------------------------
+# Agents - defined by role, goal, backstory, and tools
+# ---------------------------------------------------------------
+
+# TODO: Lab 2 - define the analyst and writer agents
 
 
 # ---------------------------------------------------------------
 # Tasks - what each agent is asked to produce
 # ---------------------------------------------------------------
 
-# TODO: Lab 2 - define the research and writing tasks
+# TODO: Lab 2 - define the analysis and writing tasks
 
 
 # ---------------------------------------------------------------
@@ -53,9 +86,14 @@ llm = get_llm()
 
 
 if __name__ == "__main__":
-    topic = sys.argv[1] if len(sys.argv) > 1 else "GitHub Codespaces"
-    print(f"TOPIC: {topic}\n")
-    result = crew.kickoff(inputs={"topic": topic})
+    example = "Brief our board on Initech as a possible acquisition target."
+    if len(sys.argv) > 1:
+        request = " ".join(sys.argv[1:])
+    else:
+        print(f'Type a request, or press Enter for the example: "{example}"')
+        request = input("> ").strip() or example
+    print(f"\nREQUEST: {request}\n")
+    result = crew.kickoff(inputs={"request": request})
     print("\n" + "=" * 60)
     print("FINAL OUTPUT:")
     print("=" * 60)

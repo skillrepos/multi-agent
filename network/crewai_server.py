@@ -1,9 +1,10 @@
 """
 crewai_server.py - Lab 5: A CrewAI agent exposed over A2A
 
-This wraps a CrewAI writing crew in an A2A AgentExecutor and serves
-it on port 10002. Same protocol as the LangGraph server - completely
-different framework inside.
+This wraps a CrewAI writer (like the one from Lab 2) in an A2A
+AgentExecutor and serves it on port 10002. The writer checks the house
+style guide for its audience before writing. Same protocol as the
+LangGraph server - completely different framework inside.
 
 This file is provided complete - no merge needed.
 """
@@ -15,6 +16,9 @@ import uvicorn
 from starlette.applications import Starlette
 
 from crewai import LLM, Agent, Crew, Process, Task
+from crewai.tools import tool
+
+import company_data as data
 
 from a2a.helpers import (get_message_text, new_task_from_user_message,
                          new_text_message, new_text_part)
@@ -45,19 +49,27 @@ def get_llm():
                base_url="http://localhost:11434", temperature=0.3)
 
 
+@tool("get_style_guide")
+def get_style_guide(audience: str) -> str:
+    """House writing rules for an audience: board, investor, or engineering."""
+    return data.get_style_guide(audience)
+
+
 writer = Agent(
-    role="Executive Brief Writer",
-    goal="Turn raw notes into a crisp two-sentence executive brief",
-    backstory=("You write for busy executives. Every word earns its place. "
-               "You never exceed two sentences."),
+    role="Business Writer",
+    goal="Write the business document requested, in the house style",
+    backstory=("You write clear business documents. Before writing anything, you "
+               "check the house style guide for the audience you're writing for."),
+    tools=[get_style_guide],
     llm=get_llm(),
     verbose=False,
 )
 
 writing_task = Task(
-    description=("Write a two-sentence executive brief based on these "
-                 "notes:\n{notes}"),
-    expected_output="Exactly two sentences.",
+    description=("{request}\n\nFirst get the style guide for the audience "
+                 "mentioned above. Then write the document using only the "
+                 "facts provided."),
+    expected_output="The finished document, following the style guide.",
     agent=writer,
 )
 
@@ -84,11 +96,17 @@ class CrewAIWriterExecutor(AgentExecutor):
                               task_id=task.id, context_id=task.context_id)
         await updater.update_status(
             state=TaskState.TASK_STATE_WORKING,
-            message=new_text_message("Writing with CrewAI..."))
+            message=new_text_message("Checking the style guide and writing with CrewAI..."))
 
-        notes = get_message_text(context.message)
-        result = await asyncio.to_thread(
-            writing_crew.kickoff, inputs={"notes": notes})
+        request = get_message_text(context.message)
+        try:
+            result = await asyncio.to_thread(
+                writing_crew.kickoff, inputs={"request": request})
+        except Exception as err:
+            await updater.update_status(
+                state=TaskState.TASK_STATE_FAILED,
+                message=new_text_message(f"The writer failed: {err}"))
+            return
 
         await updater.add_artifact(
             parts=[new_text_part(text=str(result), media_type="text/plain")])
@@ -103,8 +121,8 @@ class CrewAIWriterExecutor(AgentExecutor):
 # ---------------------------------------------------------------
 
 card = AgentCard(
-    name="Executive Brief Writer (CrewAI)",
-    description="Writes short executive briefs from notes. Built with CrewAI.",
+    name="Business Writer (CrewAI)",
+    description="Writes business documents in the house style. Built with CrewAI.",
     version="1.0.0",
     default_input_modes=["text/plain"],
     default_output_modes=["text/plain"],
@@ -115,11 +133,13 @@ card = AgentCard(
     ],
     skills=[
         AgentSkill(
-            id="exec_brief",
-            name="Executive Brief Writing",
-            description="Turns notes or facts into a two-sentence executive brief.",
-            tags=["writing", "summarize", "briefs"],
-            examples=["Write a brief from these notes: ..."],
+            id="business_writing",
+            name="Business Writing",
+            description=("Writes a board brief, investor note, or engineering "
+                         "summary in the house style. Send the audience, what "
+                         "to write, and the facts to use."),
+            tags=["writing", "briefs", "style"],
+            examples=["Audience: board. Write a brief on Globex as a supplier. Facts: ..."],
             input_modes=["text/plain"],
             output_modes=["text/plain"],
         ),

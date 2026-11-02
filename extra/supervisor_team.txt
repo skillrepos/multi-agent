@@ -30,10 +30,17 @@ model = get_model()
 # Low-level tools - the specialists' actual capabilities
 # ---------------------------------------------------------------
 
+# A small private knowledge base - facts the model can't know on its own
 COMPANY_FACTS = {
-    "acme corp": "Acme Corp is headquartered in Portland, Oregon and has 1200 employees.",
-    "globex": "Globex is headquartered in Berlin, Germany and has 5400 employees.",
-    "initech": "Initech is headquartered in Austin, Texas and has 350 employees.",
+    "acme corp": ("Acme Corp is headquartered in Portland, Oregon and makes outdoor "
+                  "camping gear. It has 1200 employees. Revenue: $120 million in 2022, "
+                  "$180 million in 2025."),
+    "globex": ("Globex is headquartered in Berlin, Germany and makes industrial "
+               "robots. It has 5400 employees. Revenue: $820 million in 2022, "
+               "$950 million in 2025."),
+    "initech": ("Initech is headquartered in Austin, Texas and makes payroll "
+                "software. It has 350 employees. Revenue: $40 million in 2022, "
+                "$95 million in 2025."),
 }
 
 
@@ -46,7 +53,8 @@ def lookup_company(name: str) -> str:
 
 @tool
 def calculate(expression: str) -> str:
-    """Evaluate a simple arithmetic expression like '1200 * 3'."""
+    """Evaluate an arithmetic expression exactly, e.g. '180000000 / 1200' or a
+    yearly growth rate like '(180 / 120) ** (1 / 3) - 1'."""
     allowed = set("0123456789+-*/(). ")
     if not set(expression) <= allowed:
         return "Only basic arithmetic is supported."
@@ -103,32 +111,27 @@ supervisor = create_agent(
     system_prompt=(
         "You are a supervisor coordinating a team. Break the user's request "
         "into subtasks. Use the research tool for questions about companies "
-        "and the analyze tool for math. Then combine the answers into one "
-        "short final response."
+        "and the analyze tool for math. Get the facts first, then send the "
+        "actual numbers to the analyze tool. Finally, combine the answers into "
+        "one short final response."
     ),
 )
 
 
 if __name__ == "__main__":
-    question = ("Where is Acme Corp headquartered, and how many employees "
-                "would it have if it tripled in size?")
-    print(f"QUESTION: {question}\n")
-    print("The supervisor is delegating to its team (this can take a minute "
-          "or two with a local model)...\n")
+    # The question comes from the command line, or you're asked for one.
+    # (team_trace.py is a small helper - it prints the "who did what" trace.)
+    from team_trace import TeamTracer, get_question
 
-    result = supervisor.invoke({"messages": [{"role": "user", "content": question}]})
+    question = get_question("Compare Acme Corp and Globex: which one brings in "
+                            "more revenue per employee, and by how much?")
+    print(f"\nQUESTION: {question}\n")
+    print("The supervisor is delegating to its team (a few seconds with Groq, "
+          "a minute or two with the local model)...\n")
 
-    print("=" * 60)
-    print("MESSAGE TRACE (who did what):")
-    print("=" * 60)
-    for msg in result["messages"]:
-        who = type(msg).__name__.replace("Message", "").upper()
-        calls = getattr(msg, "tool_calls", None)
-        if calls:
-            for c in calls:
-                print(f"[{who}] -> called tool '{c['name']}' with {c['args']}")
-        elif msg.content:
-            text = msg.content if isinstance(msg.content, str) else str(msg.content)
-            print(f"[{who}] {text[:200]}")
-    print("=" * 60)
+    tracer = TeamTracer({"research": "RESEARCHER", "analyze": "ANALYST"})
+    result = supervisor.invoke({"messages": [{"role": "user", "content": question}]},
+                               config={"callbacks": [tracer]})
+
+    tracer.print_trace(question)
     print("\nFINAL ANSWER:\n" + result["messages"][-1].content)

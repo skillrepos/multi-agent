@@ -1,7 +1,7 @@
 """
-stats_server.py - Lab 3: Serving an agent over A2A
+analyst_server.py - Lab 3: Serving an agent over A2A
 
-This publishes our TextStatsExecutor as a real A2A agent:
+This publishes the Company Analyst as a real A2A agent:
   - an Agent Card at /.well-known/agent-card.json (discovery)
   - a JSON-RPC 2.0 endpoint at / (communication)
 
@@ -17,7 +17,7 @@ from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes
 from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentInterface, AgentSkill
 
-from stats_executor import TextStatsExecutor
+from analyst_executor import AnalystExecutor
 
 # ---------------------------------------------------------------
 # The Agent Card - how other agents discover what this agent can do
@@ -34,6 +34,6 @@ from stats_executor import TextStatsExecutor
 
 
 if __name__ == "__main__":
-    print("Starting Text Stats Agent on http://127.0.0.1:9999")
+    print("Starting Company Analyst Agent on http://127.0.0.1:9999")
     print("Agent Card: http://127.0.0.1:9999/.well-known/agent-card.json")
     uvicorn.run(app, host="127.0.0.1", port=9999)

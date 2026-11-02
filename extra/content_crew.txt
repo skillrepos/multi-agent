@@ -1,15 +1,20 @@
 """
 content_crew.py - Lab 2: A role-based crew with CrewAI
 
-Two agents with distinct roles - a researcher and a writer - collaborate
-on a content pipeline. CrewAI runs the tasks in order and automatically
-passes the researcher's output to the writer as context.
+Two agents with distinct roles work through a business request:
+  - a Company Analyst gathers facts and figures, choosing which tools to use
+  - a Business Writer checks the house style guide, then writes the piece
+CrewAI runs the two tasks in a fixed order and passes the analyst's output
+to the writer. Inside each task, the agent decides its own tool calls.
 """
 
 import os
 import sys
 
 from crewai import LLM, Agent, Crew, Process, Task
+from crewai.tools import tool
+
+import company_data as data
 
 
 def get_llm():
@@ -29,24 +34,54 @@ def get_llm():
 llm = get_llm()
 
 # ---------------------------------------------------------------
-# Agents - defined by role, goal, and backstory
+# Tools - the agents' access to private business data
 # ---------------------------------------------------------------
 
-researcher = Agent(
-    role="Technology Researcher",
-    goal="Gather the key facts a writer would need about {topic}",
-    backstory=("You are a meticulous researcher who values accuracy and "
-               "brevity. You produce tight bullet lists of facts, never "
-               "long essays."),
+@tool("lookup_company")
+def lookup_company(name: str) -> str:
+    """Profile and financials for one company (Acme Corp, Globex, or Initech)."""
+    return data.lookup_company(name)
+
+
+@tool("get_news")
+def get_news(company: str) -> str:
+    """Recent news headlines for one company (Acme Corp, Globex, or Initech)."""
+    return data.get_news(company)
+
+
+@tool("calculate")
+def calculate(expression: str) -> str:
+    """Evaluate arithmetic exactly, e.g. '950000000 / 5400' or '(95 / 40) ** (1 / 3) - 1'."""
+    return data.calculate(expression)
+
+
+@tool("get_style_guide")
+def get_style_guide(audience: str) -> str:
+    """House writing rules for an audience: board, investor, or engineering."""
+    return data.get_style_guide(audience)
+
+
+# ---------------------------------------------------------------
+# Agents - defined by role, goal, backstory, and tools
+# ---------------------------------------------------------------
+
+analyst = Agent(
+    role="Company Analyst",
+    goal="Gather the facts and figures needed for this request: {request}",
+    backstory=("You are a careful analyst. You never guess: you look up every "
+               "company with your tools, check its recent news, and use the "
+               "calculate tool for all math."),
+    tools=[lookup_company, get_news, calculate],
     llm=llm,
     verbose=True,
 )
 
 writer = Agent(
-    role="Technical Writer",
-    goal="Turn research notes into a short, clear summary about {topic}",
-    backstory=("You are a skilled writer who makes technology easy to "
-               "understand without dumbing it down."),
+    role="Business Writer",
+    goal="Write the document this request asks for: {request}",
+    backstory=("You write clear business documents. Before writing anything, you "
+               "check the house style guide for the audience you're writing for."),
+    tools=[get_style_guide],
     llm=llm,
     verbose=True,
 )
@@ -55,18 +90,22 @@ writer = Agent(
 # Tasks - what each agent is asked to produce
 # ---------------------------------------------------------------
 
-research_task = Task(
-    description="Research the topic: {topic}. List 4-5 key facts about it.",
-    expected_output="A bullet list of 4-5 key facts.",
-    agent=researcher,
+analysis_task = Task(
+    description=("Request: {request}\n"
+                 "Use your tools to look up each company involved and its recent "
+                 "news. Calculate useful figures such as revenue per employee "
+                 "(2025) or yearly revenue growth from 2022 to 2025."),
+    expected_output="Bullet points of facts, news, and calculated figures.",
+    agent=analyst,
 )
 
 writing_task = Task(
-    description=("Using the research provided, write a one-paragraph summary "
-                 "(3-4 sentences) about {topic} for a technical newsletter."),
-    expected_output="One paragraph of 3-4 sentences.",
+    description=("Request: {request}\n"
+                 "First get the style guide for the audience in the request. Then "
+                 "write the document using only the analyst's facts."),
+    expected_output="The finished document, following the style guide.",
     agent=writer,
-    context=[research_task],
+    context=[analysis_task],
 )
 
 # ---------------------------------------------------------------
@@ -74,17 +113,22 @@ writing_task = Task(
 # ---------------------------------------------------------------
 
 crew = Crew(
-    agents=[researcher, writer],
-    tasks=[research_task, writing_task],
+    agents=[analyst, writer],
+    tasks=[analysis_task, writing_task],
     process=Process.sequential,
     verbose=True,
 )
 
 
 if __name__ == "__main__":
-    topic = sys.argv[1] if len(sys.argv) > 1 else "GitHub Codespaces"
-    print(f"TOPIC: {topic}\n")
-    result = crew.kickoff(inputs={"topic": topic})
+    example = "Brief our board on Initech as a possible acquisition target."
+    if len(sys.argv) > 1:
+        request = " ".join(sys.argv[1:])
+    else:
+        print(f'Type a request, or press Enter for the example: "{example}"')
+        request = input("> ").strip() or example
+    print(f"\nREQUEST: {request}\n")
+    result = crew.kickoff(inputs={"request": request})
     print("\n" + "=" * 60)
     print("FINAL OUTPUT:")
     print("=" * 60)

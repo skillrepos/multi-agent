@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 
-**Hands-on workshop — Revision 1.4 — 10/29/26**
+**Hands-on workshop — Revision 1.5 — 10/30/26**
 
 This repository contains the labs, code, and setup for the *Multi-Agent AI Systems & the A2A Protocol*
 workshop. In it, you'll build multi-agent systems with LangGraph and CrewAI, learn the A2A

@@ -1,0 +1,73 @@
+"""
+analyst_executor.py - Lab 3: The bridge between A2A and our agent
+
+An AgentExecutor is where an A2A server does its actual work. The A2A
+SDK handles the protocol (JSON-RPC, task storage, streaming); the
+executor receives a request, runs the agent, and publishes what happens
+as task updates: a progress message for every step the agent takes, the
+answer as an artifact, and a final state.
+"""
+
+from a2a.helpers import (get_message_text, new_task_from_user_message,
+                         new_text_message, new_text_part)
+from a2a.server.agent_execution import AgentExecutor, RequestContext
+from a2a.server.events import EventQueue
+from a2a.server.tasks import TaskUpdater
+from a2a.types import TaskState
+
+from analyst_agent import analyst_agent
+
+
+def describe(call) -> str:
+    """Turn a tool call into a short progress message, e.g. 'get_news(Globex)'."""
+    args = ", ".join(str(v) for v in call["args"].values())
+    return f"Calling {call['name']}({args})"
+
+
+class AnalystExecutor(AgentExecutor):
+    """Runs the Company Analyst agent and reports each step over A2A."""
+
+    async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
+        # 1. Get (or create) the task for this request
+        task = context.current_task
+        if not task:
+            task = new_task_from_user_message(context.message)
+            await event_queue.enqueue_event(task)
+
+        updater = TaskUpdater(event_queue=event_queue,
+                              task_id=task.id, context_id=task.context_id)
+
+        # 2. Tell the client we've started (task state: WORKING)
+        await updater.update_status(
+            state=TaskState.TASK_STATE_WORKING,
+            message=new_text_message("Planning how to answer..."))
+
+        # 3. Run the agent step by step, reporting every tool it decides to call
+        question = get_message_text(context.message)
+        answer = ""
+        try:
+            async for step in analyst_agent.astream(
+                    {"messages": [{"role": "user", "content": question}]},
+                    stream_mode="updates"):
+                for node, update in step.items():
+                    for msg in (update or {}).get("messages", []):
+                        for call in getattr(msg, "tool_calls", None) or []:
+                            await updater.update_status(
+                                state=TaskState.TASK_STATE_WORKING,
+                                message=new_text_message(describe(call)))
+                        if node == "model" and msg.content and not msg.tool_calls:
+                            answer = msg.content
+        except Exception as err:
+            # Errors are a task state too - the client sees FAILED, not a crash
+            await updater.update_status(
+                state=TaskState.TASK_STATE_FAILED,
+                message=new_text_message(f"The agent failed: {err}"))
+            return
+
+        # 4. Publish the answer as an artifact, then mark the task COMPLETED
+        await updater.add_artifact(
+            parts=[new_text_part(text=answer, media_type="text/plain")])
+        await updater.update_status(state=TaskState.TASK_STATE_COMPLETED)
+
+    async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
+        raise NotImplementedError("Cancel is not supported by this agent.")

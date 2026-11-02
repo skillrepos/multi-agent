@@ -237,9 +237,9 @@ If you use a different editor, or `code -d` won't work, you have two options:
 |---|---|
 | Lab 1 (in `agents`) | `cp ../extra/supervisor_team.txt supervisor_team.py` |
 | Lab 2 (in `agents`) | `cp ../extra/content_crew.txt content_crew.py` |
-| Lab 3, step 2 (in `protocol`) | `cp ../extra/stats_executor.txt stats_executor.py` |
-| Lab 3, step 5 (in `protocol`) | `cp ../extra/stats_server.txt stats_server.py` |
-| Lab 4 (in `protocol`) | `cp ../extra/stats_client.txt stats_client.py` |
+| Lab 3, step 3 (in `protocol`) | `cp ../extra/analyst_executor.txt analyst_executor.py` |
+| Lab 3, step 5 (in `protocol`) | `cp ../extra/analyst_server.txt analyst_server.py` |
+| Lab 4 (in `protocol`) | `cp ../extra/analyst_client.txt analyst_client.py` |
 | Lab 5 (in `network`) | `cp ../extra/orchestrator.txt orchestrator.py` |
 
 Either way, still read the code the lab step asks you to look at. That's where the learning is.

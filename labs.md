@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.4 - 10/29/26
+## Revision 1.5 - 10/30/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until you see "Ollama is ready with model llama3.2:3b" in the terminal before starting Lab 1 (setup takes 3-5 minutes).**
 
@@ -28,7 +28,7 @@ code supervisor_team.py
 
 <br>
 
-2. Scroll through the file. Notice what's already there: a `get_model()` function that picks Groq or local Ollama, and two plain tools - `lookup_company` (a small knowledge base) and `calculate` (arithmetic). What's *missing* (the TODO sections) are the agents themselves. Close the file when done. **Note: this file is incomplete - we'll merge in the working code in the next step.**
+2. Scroll through the file. Already there: a `get_model()` function that picks Groq or local Ollama, and two plain tools - `lookup_company` (a small private knowledge base) and `calculate`. *Missing* (the TODO sections) are the agents themselves. (`team_trace.py` next to it just prints the trace - no need to open it.) Close the file. **This file won't run yet.**
 
 <br>
 
@@ -46,69 +46,62 @@ code -d ../extra/supervisor_team.txt supervisor_team.py
 
 <br>
 
-5. Now run the team. The supervisor gets a question that needs both specialists: a research part ("where is Acme Corp headquartered") and a math part ("how many employees if it tripled").
+5. Run the team and press **Enter** to use the example question: *"Compare Acme Corp and Globex: which one brings in more revenue per employee, and by how much?"* The supervisor has to plan: get each company's figures from the researcher, then hand the numbers to the analyst.
 
 ```
 python supervisor_team.py
 ```
 
-**A few seconds on Groq; a minute or two on the local model - the supervisor makes several LLM calls to plan, delegate, and combine results.**
+**A few seconds on Groq; a minute or two on the local model.**
 
 <br>
 
-6. When it finishes, look at the **MESSAGE TRACE** section of the output. You should see the supervisor calling the `research` tool, then the `analyze` tool, with a `[TOOL]` result after each call.
+6. Look at the **MESSAGE TRACE**. The SUPERVISOR delegates to the RESEARCHER (usually once per company); the indented lines are the researcher's own work - it uses `lookup_company`, then reports back. Then the SUPERVISOR sends the numbers to the ANALYST, which uses `calculate`.
 
-![Supervisor message trace](./images/maa2a-1-2.png?raw=true "Supervisor message trace")
-
-<br>
-
-7. Look at the **FINAL ANSWER**. The supervisor combined what its two specialists returned into a single response. Note that the supervisor itself never called `lookup_company` or `calculate` directly - those belong to the specialists.
-
-**Focus on the routing, not the facts.** On Groq the answer should be exactly right (Portland, Oregon and 3600 employees). On the local 3B model the city or the numbers are often wrong - it may pass a sloppy argument to a tool, or ignore what the tool returned and fill the gap from imagination. That's a model-size limitation, not a flaw in the pattern, and it's precisely why production systems validate what comes back from a delegated agent.
+<!-- SCREENSHOT TO RETAKE: images/maa2a-1-2.png - new MESSAGE TRACE format (example question, Groq) -->
 
 <br>
 
-8. Let's change the question and watch the delegation change. Open the file and find the `question =` line near the bottom, then change it to ask about a different company - for example:
+7. Check the two summary lines under the trace: the supervisor called only `research` and `analyze`; only the specialists used `lookup_company` and `calculate`. The supervisor routes - it never touches the low-level tools. Then read the **FINAL ANSWER**.
 
-```
-code supervisor_team.py
-```
-
-Change the question to:
-
-```
-    question = ("Where is Globex headquartered, and how many employees "
-                "would it have if it doubled?")
-```
-
-Save the file (CTRL+S).
+**Focus on the routing, not the facts.** On Groq the answer should be right: Globex earns about $175,926 per employee versus Acme Corp's $150,000. The analyst used a tool for that division because models are unreliable at exact arithmetic. The local 3B model often gets details wrong, or skips a tool and makes something up (the trace then says the specialist *answered WITHOUT using any of its tools*) - a model-size limit, and exactly why production systems validate what delegated agents return.
 
 <br>
 
-9. Run it again and check the message trace - the supervisor should delegate research about *Globex* this time and hand the doubling math to the analyst.
+8. Ask a different question - typed at the prompt, or on the command line:
 
 ```
-python supervisor_team.py
+python supervisor_team.py "Which grew revenue faster from 2022 to 2025, Acme Corp or Initech? Give each one's yearly growth rate."
 ```
 
-**Small local models occasionally mis-route a step or skip a tool call - if that happens, just run it again. This flakiness is exactly why production multi-agent systems add routing rules and validation, which we'll talk about in the slides.**
+The researcher should look up both companies, and the analyst should calculate a compound growth rate for each (on Groq: about 14.5% a year for Acme Corp, 33.4% for Initech). **If the local model mis-routes a step, just run it again.**
 
 <br>
 
-10. Before moving on, notice what this pattern gives us: each specialist has a narrow job and a small toolset (easier to test, less prompt confusion), and the supervisor only makes *routing* decisions. The tradeoff: every hop is another LLM call, so latency and cost grow with team size. In Lab 2, we'll see a different framework's take on the same idea.
+9. Try a question that needs only **one** specialist:
+
+```
+python supervisor_team.py "What does Initech make, and where is it based?"
+```
+
+The trace should show only the RESEARCHER - no math, no analyst. (The knowledge base knows Acme Corp, Globex, and Initech - try your own questions.)
+
+<br>
+
+10. Notice what this pattern gives us: each specialist has a narrow job and a small toolset (easier to test, less prompt confusion), and the supervisor only makes *routing* decisions. The tradeoff: every hop is another LLM call, so latency and cost grow with team size. In Lab 2, we'll see a different framework's take on the same idea.
 
 <p align="center">
 **[END OF LAB]**
 </p>
 <br><br>
 
-**Lab 2 - Role-Based Crews (CrewAI)**
+**Lab 2 - Role-Based Crews with Tools (CrewAI)**
 
-**Purpose: To build the same kind of multi-agent collaboration with CrewAI's role/goal/backstory model and see how a process type (sequential) moves work between agents automatically. (Estimated time: 10-12 minutes)**
+**Purpose: To build a CrewAI crew whose agents use tools - an analyst that decides what to look up and calculate, and a writer that checks the house style guide before writing - while CrewAI moves the work between them. (Estimated time: 10-12 minutes)**
 
 **Steps:**
 
-1. You should still be in the **agents** directory. Take a look at the skeleton for our content crew. Notice the TODO sections for agents, tasks, and the crew itself. **This file won't run yet.**
+1. You should still be in the **agents** directory. Look at the skeleton for our crew. At the top are four tools, each wrapping a function in `company_data.py`: company profiles, news, a calculator, and a house style guide. The TODO sections are for the agents, tasks, and crew. **This file won't run yet.**
 
 ```
 code content_crew.py
@@ -116,7 +109,7 @@ code content_crew.py
 
 <br>
 
-2. Merge in the completed code. There are three blocks: the **agents** (a researcher and a writer - notice there's no code for *how* they work, just role, goal, and backstory text), the **tasks** (each with a description, an `expected_output`, and an assigned agent), and the **crew** (agents + tasks + `Process.sequential`). Merge each block, **save**, and close the diff tab.
+2. Merge in the completed code. There are three blocks: the **agents** (a Company Analyst and a Business Writer, each with a role, goal, backstory, and its own `tools` list), the **tasks** (each with a description, an `expected_output`, and an assigned agent), and the **crew** (agents + tasks + `Process.sequential`). Merge each block, **save**, and close the diff tab.
 
 ```
 code -d ../extra/content_crew.txt content_crew.py
@@ -124,53 +117,51 @@ code -d ../extra/content_crew.txt content_crew.py
 
 <br>
 
-3. Look at the merged `writing_task`. The key line is `context=[research_task]` - that's what pipes the researcher's output into the writer's prompt. In a sequential process, CrewAI runs the tasks in list order and handles that handoff for you.
+3. Look at the merged agents. The `tools=[...]` list is what each agent *may* use - which tools it calls, and how many times, is up to the agent. Then find `context=[analysis_task]` on the writing task: that's what pipes the analyst's findings into the writer's prompt.
 
 <br>
 
-4. Run the crew with its default topic (GitHub Codespaces - a topic even the small local model knows well, so we can focus on the *handoff* rather than the content):
+4. Run the crew. Press **Enter** at the prompt to use the example request: *"Brief our board on Initech as a possible acquisition target."*
 
 ```
 python content_crew.py
 ```
 
-**CrewAI prints banners as each agent starts and finishes. A few seconds on Groq; about a minute on the local model. At the end CrewAI prints a "Tracing Status" box saying tracing is disabled - that is informational, nothing to do. If you ever run the script with its output piped somewhere, CrewAI may instead ask "Share this execution trace with CrewAI? [y/N]" - press ENTER (or wait 20 seconds) to skip it.**
+**Several model calls happen here: under a minute on Groq; a few minutes on the local model. At the end CrewAI prints a "Tracing Status" box saying tracing is disabled - that's informational, nothing to do.**
 
 <br>
 
-5. Watch the output as it runs. You'll see the **Technology Researcher** agent execute first, producing its bullet list of facts.
+5. Watch the **Company Analyst** work. CrewAI shows a *Tool Execution* box for each tool the analyst chooses - expect `lookup_company` and `get_news` for Initech, and `calculate` for a figure like yearly revenue growth. Then it prints its bullet list.
 
-![Crew execution output](./images/maa2a-2-1.png?raw=true "Crew execution output")
-
-<br>
-
-6. Then the **Technical Writer** runs. Its task prompt includes the researcher's bullets as context - that's the `context=[research_task]` line doing its job.
+<!-- SCREENSHOT TO RETAKE: images/maa2a-2-1.png - analyst's tool executions (Groq) -->
 
 <br>
 
-7. When the run completes, look at the **FINAL OUTPUT** section - a short paragraph built from the researcher's facts.
+6. Then the **Business Writer** runs. Its first move is a tool call - `get_style_guide` for the *board* audience - and then it writes using the analyst's bullets.
 
 <br>
 
-8. Now run it with a topic of your own. The script takes the topic as a command-line argument:
+7. Read the **FINAL OUTPUT**. It should follow the board style: a one-sentence recommendation, then at most three bullets with numbers. (On the local model, an agent may skip a tool or ignore the style - a small-model limit, not a flaw in the crew.)
+
+<br>
+
+8. Now give the crew a different request and audience:
 
 ```
-python content_crew.py "Docker containers"
+python content_crew.py "Write an investor note comparing Acme Corp and Globex."
 ```
 
-**Pick a topic the model is likely to know. A small local model has no web access and no knowledge of very recent technology - ask it about something obscure (or about A2A itself, which postdates its training) and the researcher will honestly report that it found nothing.**
+<br>
+
+9. Compare the tool calls with the first run. The analyst should look up *both* companies this time, and the writer should fetch the *investor* style instead. Same code, different choices - that's the agentic part. What stays fixed is the *order* of the tasks: `Process.sequential` always runs the analysis before the writing.
 
 <br>
 
-9. Compare the researcher's bullets to the writer's paragraph in this run - you should be able to trace each sentence back to a bullet. That traceability between agents is one of the first things to check when debugging any multi-agent pipeline.
+10. Compare this lab to Lab 1. LangGraph gave us *explicit* control flow - we wrote the delegation tools ourselves. CrewAI gave us *declarative* collaboration - we described who the agents are, what tools they have, and what the tasks produce. CrewAI's other process type, `Process.hierarchical`, adds a manager agent that decides the task order too - it needs a stronger model than our local 3B, which is why we're using sequential today.
 
 <br>
 
-10. Compare this lab to Lab 1. LangGraph gave us *explicit* control flow - we wrote the delegation tools ourselves. CrewAI gave us *declarative* collaboration - we described who the agents are and what the tasks produce, and the process type decided the flow. Also note `Process.sequential` in the crew: CrewAI's other process type, `Process.hierarchical`, adds a manager agent that decides task order dynamically - it needs a stronger model than our local 3B, which is why we're using sequential today.
-
-<br>
-
-11. Both labs so far share one big limitation: everything lives in **one process, one framework, one codebase**. The researcher can't be reused by a team written in another framework, and nothing outside this script can even find out these agents exist. That's the problem the A2A protocol solves - and it's where we go next.
+11. Both labs so far share one big limitation: everything lives in **one process, one framework, one codebase**. The analyst can't be reused by a team written in another framework, and nothing outside this script can even find out these agents exist. That's the problem the A2A protocol solves - and it's where we go next.
 
 <p align="center">
 **[END OF LAB]**
@@ -179,43 +170,43 @@ python content_crew.py "Docker containers"
 
 **Lab 3 - Your First A2A Agent: Cards, Servers, and Tasks**
 
-**Purpose: To build and run a real A2A (spec v1.0) agent server - an AgentExecutor that does the work, an Agent Card that advertises it, and a JSON-RPC endpoint we can hit with nothing but curl. (Estimated time: 10-12 minutes)**
+**Purpose: To serve a real tool-using agent over A2A (spec v1.0) - an AgentExecutor that reports each step the agent takes as a task update, an Agent Card that advertises it, and a JSON-RPC endpoint we can call with nothing but curl. (Estimated time: 10-12 minutes)**
 
 **Steps:**
 
-1. Change into the protocol directory and look at the skeleton for the agent's "brain" - the executor. Note the flow in the comments: get the task, report progress, do the work, publish an artifact. **This file won't run yet.**
+1. Change into the protocol directory and look at the agent we'll serve. It's a LangGraph agent like the ones in Lab 1, with three tools: `lookup_company`, `get_news`, and `calculate`. Notice there's nothing about A2A in this file. **It's complete - no merge needed.**
 
 ```
 cd ../protocol
-code stats_executor.py
+code analyst_agent.py
 ```
 
 <br>
 
-2. Merge in the completed executor code, **save**, and close the diff tab. This agent deliberately doesn't use an LLM - it computes text statistics - so we can watch the *protocol* without waiting on a model.
+2. Now look at the skeleton for the executor - the bridge between the agent and the protocol. It already gets (or creates) the task; the TODO is everything after that. **This file won't run yet.**
 
 ```
-code -d ../extra/stats_executor.txt stats_executor.py
-```
-
-<br>
-
-3. In the merged code, find the three protocol moments every A2A agent goes through: `update_status(...TASK_STATE_WORKING...)` (progress), `add_artifact(...)` (the deliverable), and `update_status(...TASK_STATE_COMPLETED)` (done). Task states are the heartbeat of A2A - clients see each of these as it happens.
-
-<br>
-
-4. Now look at the server skeleton, which will publish this executor to the world:
-
-```
-code stats_server.py
+code analyst_executor.py
 ```
 
 <br>
 
-5. Merge in the completed server code, **save**, and close the diff tab. There are two blocks: the **Agent Card** (an `AgentSkill` describing *what* it can do, and an `AgentCard` describing *how* to reach it - note the `supported_interfaces` entry saying "JSON-RPC at http://127.0.0.1:9999"), and the **server wiring** (the SDK's request handler plus two sets of routes: one that serves the card, one that serves the JSON-RPC methods).
+3. Merge in the completed executor code, **save**, and close the diff tab.
 
 ```
-code -d ../extra/stats_server.txt stats_server.py
+code -d ../extra/analyst_executor.txt analyst_executor.py
+```
+
+<br>
+
+4. Read the merged code. It reports `TASK_STATE_WORKING`, then runs the agent step by step with `astream`. Every tool call the agent decides to make becomes another WORKING update with a message like `Calling get_news(Globex)`. If the agent errors, the task ends as `TASK_STATE_FAILED`. Otherwise the answer is published with `add_artifact(...)` and the task is marked `TASK_STATE_COMPLETED`.
+
+<br>
+
+5. Merge the completed server code, **save**, and close the diff tab. There are two blocks: the **Agent Card** (an `AgentSkill` describing *what* the agent can do, and an `AgentCard` describing *how* to reach it - note the `supported_interfaces` entry saying "JSON-RPC at http://127.0.0.1:9999"), and the **server wiring** (the SDK's request handler plus routes for the card and for the JSON-RPC methods).
+
+```
+code -d ../extra/analyst_server.txt analyst_server.py
 ```
 
 <br>
@@ -223,12 +214,12 @@ code -d ../extra/stats_server.txt stats_server.py
 6. Start the agent server. Leave it running in this terminal - we'll call this **Terminal 1 (server)** for the rest of this lab and Lab 4.
 
 ```
-python stats_server.py
+python analyst_server.py
 ```
 
 You should see uvicorn report: `Uvicorn running on http://127.0.0.1:9999`.
 
-![A2A server running](./images/maa2a-3-1.png?raw=true "A2A server running")
+<!-- SCREENSHOT TO RETAKE: images/maa2a-3-1.png - analyst server running -->
 
 <br>
 
@@ -241,11 +232,11 @@ curl -s http://127.0.0.1:9999/.well-known/agent-card.json | python3 -m json.tool
 
 Look at the JSON: `name`, `version`, `capabilities.streaming`, the `skills` list with its `tags` and `examples`, and `supportedInterfaces` with `protocolBinding: "JSONRPC"`. This card is the *entire* public contract of the agent.
 
-![Agent Card JSON](./images/maa2a-3-2.png?raw=true "Agent Card JSON")
+<!-- SCREENSHOT TO RETAKE: images/maa2a-3-2.png - Company Analyst Agent card JSON -->
 
 <br>
 
-8. Now send the agent a message using raw JSON-RPC 2.0 - no SDK, just curl. Note the `A2A-Version: 1.0` header and the v1.0 method name `SendMessage`:
+8. Now send the agent a question using raw JSON-RPC 2.0 - no SDK, just curl. Note the `A2A-Version: 1.0` header and the v1.0 method name `SendMessage`. **curl waits while the agent works: a few seconds on Groq, up to a couple of minutes on the local model.**
 
 ```
 curl -s -X POST http://127.0.0.1:9999/ \
@@ -259,7 +250,7 @@ curl -s -X POST http://127.0.0.1:9999/ \
       "message": {
         "messageId": "msg-001",
         "role": "ROLE_USER",
-        "parts": [ { "text": "Hello A2A world from curl" } ]
+        "parts": [ { "text": "What is the revenue per employee at Globex?" } ]
       }
     }
   }' | python3 -m json.tool
@@ -267,13 +258,13 @@ curl -s -X POST http://127.0.0.1:9999/ \
 
 <br>
 
-9. Examine the response. It's a complete **Task** object: an `id`, a `contextId`, a `status` of `TASK_STATE_COMPLETED`, an `artifacts` list holding our text statistics, and a `history` showing both our message and the agent's "Analyzing your text..." progress message. This is the A2A task lifecycle in one screenshot.
+9. Examine the response. It's a complete **Task** object: an `id`, a `status` of `TASK_STATE_COMPLETED`, an `artifacts` list holding the agent's answer, and a `history`. Read the history: your question, then one progress message per tool the agent chose - for example `Calling lookup_company(Globex)` and `Calling calculate(950000000 / 5400)`. The task is a record of what the agent did.
 
-![Task response JSON](./images/maa2a-3-3.png?raw=true "Task response JSON")
+<!-- SCREENSHOT TO RETAKE: images/maa2a-3-3.png - Task response with history of tool steps -->
 
 <br>
 
-10. Tasks persist after they finish. Copy the `id` value from the response in the previous step and fetch the task again with the `GetTask` method (replace `<TASK-ID>` with your actual id):
+10. Tasks persist after they finish. Copy the `id` value from the response and fetch the task again with the `GetTask` method (replace `<TASK-ID>` with your actual id):
 
 ```
 curl -s -X POST http://127.0.0.1:9999/ \
@@ -297,24 +288,24 @@ curl -s -X POST http://127.0.0.1:9999/ \
 
 **Lab 4 - Speaking A2A: The Client Side, Streaming, and Task Retrieval**
 
-**Purpose: To write an A2A client that discovers an agent from its card, sends it work, streams the task lifecycle events in real time, and retrieves the finished task afterward. (Estimated time: 10-12 minutes)**
+**Purpose: To write an A2A client that discovers an agent from its card, sends it a question, streams the agent's progress live as it works, and retrieves the finished task afterward. (Estimated time: 10-12 minutes)**
 
 **Steps:**
 
-1. Your Text Stats server from Lab 3 should still be running in Terminal 1. Verify from **Terminal 2**:
+1. Your Company Analyst server from Lab 3 should still be running in Terminal 1. Verify from **Terminal 2**:
 
 ```
 curl -s http://127.0.0.1:9999/.well-known/agent-card.json | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])"
 ```
 
-You should see `Text Stats Agent`. (If not, go to Terminal 1, `cd protocol`, and run `python stats_server.py` again.)
+You should see `Company Analyst Agent`. (If not, go to Terminal 1, `cd protocol`, and run `python analyst_server.py` again.)
 
 <br>
 
 2. In Terminal 2, make sure you are in the **protocol** directory, and look at the client skeleton. The four numbered TODO sections mirror the lifecycle of every A2A client interaction: discover, connect, send/stream, retrieve. **This file won't run yet.**
 
 ```
-code stats_client.py
+code analyst_client.py
 ```
 
 <br>
@@ -322,50 +313,52 @@ code stats_client.py
 3. Merge in the completed client code, **save**, and close the diff tab:
 
 ```
-code -d ../extra/stats_client.txt stats_client.py
+code -d ../extra/analyst_client.txt analyst_client.py
 ```
 
 <br>
 
-4. Walk through what you merged. **Discovery**: `A2ACardResolver` fetches the same card you curled in Lab 3. **Connect**: `create_client(card, ...)` reads the card's `supportedInterfaces` and picks the transport - our code never mentions JSON-RPC. **Send/stream**: `client.send_message(...)` returns an async stream of events. **Retrieve**: `client.get_task(GetTaskRequest(id=...))` fetches the task after the fact.
+4. Walk through what you merged. **Discovery**: `A2ACardResolver` fetches the same card you curled in Lab 3. **Connect**: `create_client(card, ...)` reads the card's `supportedInterfaces` and picks the transport - our code never mentions JSON-RPC. **Send/stream**: `client.send_message(...)` returns an async stream of events; each status update can carry a progress message. **Retrieve**: `client.get_task(GetTaskRequest(id=...))` fetches the task after the fact.
 
 <br>
 
-5. Run the client:
+5. Run the client. Press **Enter** at the prompt to use the example question: *"How much revenue per employee does Initech bring in, and what's its latest news?"*
 
 ```
-python stats_client.py
-```
-
-<br>
-
-6. Look at the output. First, discovery: the agent's name, version, and skills - printed from the card, not hardcoded. Then the streamed events in order: `[task]` with the new task's id, `[status] WORKING`, `[artifact]` with the text statistics, and `[status] COMPLETED`. That's the same lifecycle you saw as one JSON blob in Lab 3, arriving event by event over Server-Sent Events.
-
-![Client streaming output](./images/maa2a-4-1.png?raw=true "Client streaming output")
-
-<br>
-
-7. After the stream ends, the client fetches the task by id - you should see `final state: COMPLETED`, one artifact, and a two-message history. Anything that holds the task id can check on this task later - that's what makes long-running agent work possible.
-
-<br>
-
-8. Edit the message the client sends (find the `new_text_message(` call in step 3's merged code) and change the sentence to anything you like. Save, and run the client again - the artifact statistics should change to match your text.
-
-```
-python stats_client.py
+python analyst_client.py
 ```
 
 <br>
 
-9. Notice the `streaming=True` in `ClientConfig`. Set it to `False`, save, and run the client once more. The task and artifact still arrive (the SDK falls back to a single request/response) but there are no incremental `WORKING` events to print - the result comes back in one shot. Set it back to `True` and save when you're done experimenting.
+6. Watch the output. First, discovery: the agent's name and skill, printed from the card. Then the events stream in **as the agent works**: `[task]`, `[status] WORKING Planning how to answer...`, then one WORKING update for each tool the agent decides to call (`lookup_company(Initech)`, `get_news(Initech)`, `calculate(95000000 / 350)`), then `[artifact]` with the answer and `[status] COMPLETED`. It's the same history you saw as one JSON blob in Lab 3 - now arriving live over Server-Sent Events.
+
+<!-- SCREENSHOT TO RETAKE: images/maa2a-4-1.png - streamed tool-step updates (Groq) -->
 
 <br>
 
-10. We're done with the Text Stats agent. Go to **Terminal 1** and stop the server with **CTRL+C**. (Lab 5 starts fresh servers on different ports.)
+7. After the stream ends, the client fetches the task by id: `final state: COMPLETED`, one artifact, and a history with your question plus each progress message. Anything that holds the task id can check on this task later - that's what makes long-running agent work possible.
 
 <br>
 
-11. Think about what you did NOT have to write in this lab: no HTTP routes, no JSON-RPC envelopes, no SSE parsing, no task storage. The card told the client everything it needed. In Lab 5, that's what lets one client drive agents from *different frameworks* without caring what's inside them.
+8. Ask a question of your own on the command line:
+
+```
+python analyst_client.py "What is the latest news about Acme Corp?"
+```
+
+Compare the WORKING updates with step 6. There's no math in this question, so the agent shouldn't call `calculate`. A different question gives different steps - that's what makes this an agent rather than a script.
+
+<br>
+
+9. Now find `streaming=True` in `ClientConfig`, set it to `False`, save, and run the step 8 command again. You wait with no progress at all, then get only the finished task. For agents doing multi-step work, that live progress is why streaming matters. Set it back to `True` and save.
+
+<br>
+
+10. We're done with this agent. Go to **Terminal 1** and stop the server with **CTRL+C**. (Lab 5 starts fresh servers on different ports.)
+
+<br>
+
+11. Think about what you did NOT have to write in this lab: no HTTP routes, no JSON-RPC envelopes, no SSE parsing, no task storage. The card told the client everything it needed. In Lab 5, that's what lets one orchestrator drive agents from *different frameworks* without caring what's inside them.
 
 <p align="center">
 **[END OF LAB]**
@@ -374,22 +367,20 @@ python stats_client.py
 
 **Lab 5 - The Payoff: A Cross-Framework Agent Network**
 
-**Purpose: To connect a LangGraph agent and a CrewAI agent into one network over A2A, then build an orchestrator that discovers them by capability and chains their work - without knowing which framework is behind either one. (Estimated time: 12 minutes)**
+**Purpose: To connect a LangGraph agent and a CrewAI agent into one network over A2A, then build an orchestrator whose AI model reads their Agent Cards and decides which agents to call - without knowing which framework is behind either one. (Estimated time: 12 minutes)**
 
 **Steps:**
 
-1. Change into the network directory and look at the first provided server - our Lab 1-style LangGraph research agent, now wrapped in an A2A executor. **This file is complete - no merge needed.**
+1. Change into the network directory and look at the first provided server: a research agent like Lab 1's, built with LangGraph, with two tools (`lookup_company` and `get_news`) and an executor that reports each tool call just like Lab 3's. Its card advertises the skill `company_research` on port 10001. **This file is complete - no merge needed.**
 
 ```
 cd ../network
 code langgraph_server.py
 ```
 
-Find the `LangGraphResearchExecutor` class: inside `execute()`, it calls `research_agent.invoke(...)` and publishes the agent's answer as an A2A artifact. The card at the bottom advertises the skill with tags `["research", "companies", "facts"]` on port 10001.
-
 <br>
 
-2. Now look at the second provided server - a CrewAI writing crew behind the *exact same* protocol plumbing, on port 10002, with tags `["writing", "summarize", "briefs"]`. Compare its `execute()` method to the LangGraph one: different framework call inside, identical A2A protocol outside.
+2. Now look at the second provided server: Lab 2's Business Writer, built with CrewAI and still using its `get_style_guide` tool, behind the *exact same* protocol on port 10002. Its card advertises the skill `business_writing`. Different framework inside, identical A2A outside.
 
 ```
 code crewai_server.py
@@ -405,7 +396,7 @@ python crewai_server.py < /dev/null > /tmp/crew.log 2>&1 &
 sleep 12
 ```
 
-**The `sleep` gives the servers time to import their frameworks and start up (about 10-15 seconds). The `< /dev/null` matters: after a crew finishes, CrewAI prints an interactive prompt asking whether you want to view execution traces. A background job that tries to read your keyboard gets suspended by the shell, which would silently kill the CrewAI agent after its first request.**
+**The `sleep` gives the servers time to import their frameworks and start up. The `< /dev/null` matters: CrewAI can ask an interactive question after a run, and a background job that tries to read your keyboard gets suspended by the shell - which would silently stop the CrewAI agent after its first request.**
 
 <br>
 
@@ -416,13 +407,13 @@ curl -s http://127.0.0.1:10001/.well-known/agent-card.json | python3 -c "import 
 curl -s http://127.0.0.1:10002/.well-known/agent-card.json | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])"
 ```
 
-You should see `Company Research Agent (LangGraph)` and `Executive Brief Writer (CrewAI)`.
+You should see `Company Research Agent (LangGraph)` and `Business Writer (CrewAI)`.
 
-![Both agent cards live](./images/maa2a-5-1.png?raw=true "Both agent cards live")
+<!-- SCREENSHOT TO RETAKE: images/maa2a-5-1.png - both agent cards live -->
 
 <br>
 
-5. Open the orchestrator skeleton. Read `main()` first - it's already written, and it tells the story: discover the agents, find one by the `research` tag and one by the `writing` tag, delegate to each in turn, print the final brief. The three helper functions are the TODOs. **This file won't run yet.**
+5. Open the orchestrator skeleton and read `main()` first - it's already written. It discovers the agents and turns their cards into tools, then loops: ask the model what to do next, run each tool call as an A2A delegation, and stop when the model replies with the finished document. The three helpers are the TODOs. **This file won't run yet.**
 
 ```
 code orchestrator.py
@@ -430,7 +421,7 @@ code orchestrator.py
 
 <br>
 
-6. Merge in the three helper functions, **save**, and close the diff tab: `discover_agents` (fetch every card), `find_agent_with_tag` (capability matching on skill tags), and `delegate` (create a client from a card, send the message, collect artifact text from the stream).
+6. Merge in the three helper functions, **save**, and close the diff tab: `discover_agents` (fetch every card), `cards_to_tools` (each skill on a card becomes a tool whose description comes straight from the card - this is how the model "reads" the cards), and `delegate` (create a client from a card, send the message, collect the artifact text).
 
 ```
 code -d ../extra/orchestrator.txt orchestrator.py
@@ -438,27 +429,33 @@ code -d ../extra/orchestrator.txt orchestrator.py
 
 <br>
 
-7. Check the orchestrator's imports for a moment: `a2a.client`, `httpx`, `asyncio` - and **no LangGraph, no CrewAI**. The orchestrator is pure protocol. Note what A2A did *not* do here: it didn't eliminate orchestration - `main()` still decides who gets called and how results chain. A2A standardized the boundary, so what's *inside* each agent stopped mattering.
+7. Check the orchestrator's imports: `a2a.client`, `httpx`, and `llm.py`, a helper that makes one plain web request to the model. **No LangGraph, no CrewAI, no agent framework at all.** The orchestrator is pure protocol plus a model.
 
 <br>
 
-8. Run the network:
+8. Run the network. Press **Enter** at the prompt to use the example request: *"Write a short brief for our board on Globex as a possible robotics supplier, including any recent news they should know about."*
 
 ```
 python orchestrator.py
 ```
 
-**Both delegations call an LLM: about 2 seconds total on Groq, or 1-3 minutes on the local model. Watch the progress as it prints.**
+**Seconds on Groq; several minutes on the local model. On the local model the orchestrator may skip an agent or answer directly - small models plan poorly, which is why Groq is recommended.**
 
 <br>
 
-9. Watch the sequence: the roster of discovered agents with their tags, then research delegated to the LangGraph agent (facts about Globex come back), then those facts sent on to the CrewAI agent, and finally the **EXECUTIVE BRIEF** - researched by one framework, written by another, coordinated by neither.
+9. Watch the model's decisions. After the roster of agents, you'll see `ORCHESTRATOR -> Company Research Agent (LangGraph)` with a request the model wrote itself, the facts that come back, then `ORCHESTRATOR -> Business Writer (CrewAI)` with the audience and those facts, and finally the **FINAL RESULT**. Nobody coded that order - the model planned it from the cards.
 
-![Cross-framework orchestration output](./images/maa2a-5-2.png?raw=true "Cross-framework orchestration output")
+<!-- SCREENSHOT TO RETAKE: images/maa2a-5-2.png - orchestrator delegations and final result (Groq) -->
 
 <br>
 
-10. This routing was *declarative*: the orchestrator picked agents by skill tags from their cards. Swap either server for any other A2A agent with matching tags - written in Google ADK, Microsoft Agent Framework, or anything else - and the orchestrator runs unchanged. That is the entire point of the protocol.
+10. Give the network a different request:
+
+```
+python orchestrator.py "Prepare an investor note comparing Acme Corp and Initech."
+```
+
+The model may call the research agent twice - once per company - before the writer. Swap either server for any A2A agent whose card describes a matching skill - built with Google ADK, Microsoft Agent Framework, or anything else - and the orchestrator runs unchanged. That's the point of the protocol.
 
 <br>
 
