@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.5 - 10/30/26
+## Revision 1.10 - 11/02/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until you see "Ollama is ready with model llama3.2:3b" in the terminal before starting Lab 1 (setup takes 3-5 minutes).**
 
@@ -34,7 +34,7 @@ code supervisor_team.py
 
 <br>
 
-3. Merge in the three missing blocks: the **specialist agents** (researcher and analyst), the **delegation tools** (`research` and `analyze`, each wrapping a specialist), and the **supervisor**. Hover over a block with the yellow gutter icon to see what it does, click its arrow to merge it, then **save** and close the diff tab.
+3. Merge in the three missing blocks: the **specialist agents** (researcher and analyst), the **delegation tools** (`research` and `analyze`, each wrapping a specialist), and the **supervisor**. Hover over a block with the yellow gutter icon to see what it does, click its arrow to merge it, then close the diff tab to save the changes.
 
 ```
 code -d ../extra/supervisor_team.txt supervisor_team.py
@@ -62,7 +62,7 @@ python supervisor_team.py
 
 **How can we see inside the specialists?** The supervisor's own messages can't - the specialists ran inside its tools. So the script passed a `TeamTracer` (from `team_trace.py`) to the run as a *callback*, and LangChain reported every step to it, specialists included. The comments at the top of `team_trace.py` explain how it works.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-1-2.png - new MESSAGE TRACE format (example question, Groq) -->
+![Running the supervisor team](./images/maa2a-1-2.png?raw=true "Running the supervisor team")
 
 <br>
 
@@ -113,7 +113,7 @@ code content_crew.py
 
 <br>
 
-2. Merge in the completed code. There are three blocks: the **agents** (a Company Analyst and a Business Writer, each with a role, goal, backstory, and its own `tools` list), the **tasks** (each with a description, an `expected_output`, and an assigned agent), and the **crew** (agents + tasks + `Process.sequential`). Merge each block, **save**, and close the diff tab.
+2. Merge in the completed code. There are three blocks: the **agents** (a Company Analyst and a Business Writer, each with a role, goal, backstory, and its own `tools` list), the **tasks** (each with a description, an `expected_output`, and an assigned agent), and the **crew** (agents + tasks + `Process.sequential`). Merge each block, and close the diff tab to save the changes.
 
 ```
 code -d ../extra/content_crew.txt content_crew.py
@@ -137,7 +137,7 @@ python content_crew.py
 
 5. Watch the **Company Analyst** work. CrewAI shows a *Tool Execution* box for each tool the analyst chooses - expect `lookup_company` and `get_news` for Initech, and `calculate` for a figure like revenue growth from 2024 to 2025. Then it prints its bullet list.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-2-1.png - analyst's tool executions (Groq) -->
+![Analyst's tool results](./images/maa2a-2-1.png?raw=true "Analyst's tool results")
 
 <br>
 
@@ -158,6 +158,8 @@ python content_crew.py "Write an investor note comparing Acme Corp and Globex."
 <br>
 
 9. Compare the tool calls with the first run. The analyst should look up *both* companies this time, and the writer should fetch the *investor* style instead. Same code, different choices - that's the agentic part. What stays fixed is the *order* of the tasks: `Process.sequential` always runs the analysis before the writing.
+
+![Investor note results](./images/maa2a-2-2.png?raw=true "Investor note results")
 
 <br>
 
@@ -207,7 +209,7 @@ code -d ../extra/analyst_executor.txt analyst_executor.py
 
 <br>
 
-5. Merge the completed server code, **save**, and close the diff tab. There are two blocks: the **Agent Card** (an `AgentSkill` describing *what* the agent can do, and an `AgentCard` describing *how* to reach it - note the `supported_interfaces` entry saying "JSON-RPC at http://127.0.0.1:9999"), and the **server wiring** (the SDK's request handler plus routes for the card and for the JSON-RPC methods).
+5. Merge the completed server code, and close the diff tab to save the changes. There are two blocks: the **Agent Card** (an `AgentSkill` describing *what* the agent can do, and an `AgentCard` describing *how* to reach it - note the `supported_interfaces` entry saying "JSON-RPC at http://127.0.0.1:9999"), and the **server wiring** (the SDK's request handler plus routes for the card and for the JSON-RPC methods).
 
 ```
 code -d ../extra/analyst_server.txt analyst_server.py
@@ -223,7 +225,8 @@ python analyst_server.py
 
 You should see uvicorn report: `Uvicorn running on http://127.0.0.1:9999`.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-3-1.png - analyst server running -->
+
+![Analyst Server Running](./images/maa2a-3-1.png?raw=true "Analyst Server Running")
 
 <br>
 
@@ -236,7 +239,7 @@ curl -s http://127.0.0.1:9999/.well-known/agent-card.json | python3 -m json.tool
 
 Look at the JSON: `name`, `version`, `capabilities.streaming`, the `skills` list with its `tags` and `examples`, and `supportedInterfaces` with `protocolBinding: "JSONRPC"`. This card is the *entire* public contract of the agent.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-3-2.png - Company Analyst Agent card JSON -->
+![Company Analyst Agent card JSON](./images/maa2a-3-2.png?raw=true "Company Analyst Agent card JSON")
 
 <br>
 
@@ -264,7 +267,9 @@ curl -s -X POST http://127.0.0.1:9999/ \
 
 9. Examine the response. It's a complete **Task** object: an `id`, a `status` of `TASK_STATE_COMPLETED`, an `artifacts` list holding the agent's answer, and a `history`. Read the history: your question, then one progress message per tool the agent chose - for example `Calling lookup_company(Globex)` and `Calling calculate(950000000 / 5400)`. The task is a record of what the agent did.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-3-3.png - Task response with history of tool steps -->
+
+![Task response with history of tool steps](./images/maa2a-3-3.png?raw=true "Task response with history of tool steps")
+
 
 <br>
 
@@ -277,9 +282,13 @@ curl -s -X POST http://127.0.0.1:9999/ \
   -d '{"jsonrpc":"2.0","id":2,"method":"GetTask","params":{"id":"<TASK-ID>"}}' | python3 -m json.tool
 ```
 
+![Using GetTask method](./images/maa2a-3-4.png?raw=true "Using GetTask method")
+
 <br>
 
 11. One more experiment: run the same `SendMessage` curl from step 8 again, but **delete the `A2A-Version: 1.0` header line**. You'll get back a structured error: `A2A version '0.3' is not supported by this handler`. The server assumes the older 0.3 spec when the header is missing - version negotiation is built into the protocol.
+
+![Unsupported A2A version](./images/maa2a-3-5.png?raw=true "Unsupported A2A version")
 
 <br>
 
