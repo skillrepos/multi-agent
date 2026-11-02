@@ -1,8 +1,8 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.11 - 11/02/26
+## Revision 1.12 - 11/02/26
 
-**Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until you see "Ollama is ready with model llama3.2:3b" in the terminal before starting Lab 1 (setup takes 3-5 minutes).**
+**Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until setup finishes and the terminal shows a prompt (3-5 minutes). To double-check that the local model is in place, run `ollama list` - you should see llama3.2:3b.**
 
 **Notes:**
 1. To copy and paste in the codespace, you may need to use keyboard commands - CTRL+C and CTRL+V (CMD+C and CMD+V on Mac).
@@ -92,7 +92,7 @@ The trace should show only the RESEARCHER - no math, no analyst. (The knowledge 
 
 <br>
 
-10. Notice what this pattern gives us: each specialist has a narrow job and a small toolset (easier to test, less prompt confusion), and the supervisor only makes *routing* decisions. The tradeoff: every hop is another LLM call, so latency and cost grow with team size. In Lab 2, we'll see a different framework's take on the same idea.
+10. Notice what this pattern gives us: each specialist has a narrow job and a small toolset (easier to test, less prompt confusion), and the supervisor only makes *routing* decisions. The tradeoff: every hop is another model call, so answers get slower and cost more as the team grows. In Lab 2, we'll see a different framework's take on the same idea.
 
 <p align="center">
 **[END OF LAB]**
@@ -131,7 +131,7 @@ code -d ../extra/content_crew.txt content_crew.py
 python content_crew.py
 ```
 
-**Several model calls happen here: under a minute on Groq; a few minutes on the local model. At the end CrewAI prints a "Tracing Status" box saying tracing is disabled - that's informational, nothing to do.**
+**Several model calls happen here: under a minute on Groq; a few minutes on the local model. Your first run may end by asking `Share this execution trace with CrewAI? [y/N]` - just wait or press Enter (it defaults to No after 20 seconds). Later runs print a "Tracing Status" box saying tracing is disabled instead. Both are informational - nothing to do. A WARNING about an "approximate input token count" is harmless too.**
 
 <br>
 
@@ -331,7 +331,7 @@ code -d ../extra/analyst_client.txt analyst_client.py
 
 <br>
 
-4. Walk through what you merged. **Discovery**: `A2ACardResolver` fetches the same card you curled in Lab 3. **Connect**: `create_client(card, ...)` reads the card's `supportedInterfaces` and picks the transport - our code never mentions JSON-RPC. **Send/stream**: `client.send_message(...)` returns an async stream of events; each status update can carry a progress message. **Retrieve**: `client.get_task(GetTaskRequest(id=...))` fetches the task after the fact.
+4. Walk through what you merged. **Discovery**: `A2ACardResolver` fetches the same card you curled in Lab 3. **Connect**: `create_client(card, ...)` reads the card's `supportedInterfaces` and picks how to talk to the agent - our code never mentions JSON-RPC. **Send/stream**: `client.send_message(...)` returns an async stream of events; each status update can carry a progress message. **Retrieve**: `client.get_task(GetTaskRequest(id=...))` fetches the task after the fact.
 
 <br>
 
@@ -343,9 +343,9 @@ python analyst_client.py
 
 <br>
 
-6. Watch the output. First, discovery: the agent's name and skill, printed from the card. Then the events stream in **as the agent works**: `[task]`, `[status] WORKING Planning how to answer...`, then one WORKING update for each tool the agent decides to call (`lookup_company(Initech)`, `get_news(Initech)`, `calculate(95000000 / 350)`), then `[artifact]` with the answer and `[status] COMPLETED`. It's the same history you saw as one JSON blob in Lab 3 - now arriving live over Server-Sent Events.
+6. Watch the output. First, discovery: the agent's name and skill, printed from the card. Then the events stream in **as the agent works**: `[task]`, `[status] WORKING Planning how to answer...`, then one WORKING update for each tool the agent decides to call (`lookup_company(Initech)`, `get_news(Initech)`, `calculate(95000000 / 350)`), then `[artifact]` with the answer and `[status] COMPLETED`. It's the same history you saw as one JSON blob in Lab 3 - now arriving live over Server-Sent Events (SSE), one long HTTP response the server keeps adding to.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-4-1.png - streamed tool-step updates (Groq) -->
+![Streaming task updates from the A2A client](./images/maa2a-4-1.png?raw=true "Streaming task updates from the A2A client")
 
 <br>
 
@@ -422,7 +422,7 @@ curl -s http://127.0.0.1:10002/.well-known/agent-card.json | python3 -c "import 
 
 You should see `Company Research Agent (LangGraph)` and `Business Writer (CrewAI)`.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-5-1.png - both agent cards live -->
+![Both agent cards live](./images/maa2a-5-1.png?raw=true "Both agent cards live")
 
 <br>
 
@@ -458,7 +458,7 @@ python orchestrator.py
 
 9. Watch the model's decisions. After the roster of agents, you'll see `ORCHESTRATOR -> Company Research Agent (LangGraph)` with a request the model wrote itself, the facts that come back, then `ORCHESTRATOR -> Business Writer (CrewAI)` with the audience and those facts, and finally the **FINAL RESULT**. Nobody coded that order - the model planned it from the cards.
 
-<!-- SCREENSHOT TO RETAKE: images/maa2a-5-2.png - orchestrator delegations and final result (Groq) -->
+![Orchestrator delegations and final result](./images/maa2a-5-2.png?raw=true "Orchestrator delegations and final result")
 
 <br>
 

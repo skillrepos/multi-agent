@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 
-**Hands-on workshop — Revision 1.5 — 10/30/26**
+**Hands-on workshop — Revision 1.6 — 11/02/26**
 
 This repository contains the labs, code, and setup for the *Multi-Agent AI Systems & the A2A Protocol*
 workshop. In it, you'll build multi-agent systems with LangGraph and CrewAI, learn the A2A
@@ -56,17 +56,21 @@ Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/b
 
 **3. Click *Create new codespace*, then wait for setup to finish.**
 
-<!-- SCREENSHOT TO CAPTURE: images/maa2a-0-2.png - the "Create codespace" page for skillrepos/multi-agent with the "Create new codespace" button -->
+![Create codespace page](./images/maa2a-0-2.png?raw=true "Create codespace page")
 
 The codespace opens in your browser, then runs a setup script that installs the Python packages,
 installs Ollama, and downloads the local `llama3.2:3b` model. This takes **3-5 minutes**. You can
 watch it in the terminal at the bottom of the screen.
 
-<!-- SCREENSHOT TO CAPTURE: images/maa2a-0-3.png - terminal while postCreateCommand is running -->
+![Setup script running in the terminal](./images/maa2a-0-3.png?raw=true "Setup script running in the terminal")
 
-The codespace is ready when the terminal shows `Ollama is ready with model llama3.2:3b`.
+If a *"Do you trust the authors of the files in this folder?"* dialog appears, click **Trust Folder & Continue**.
 
-<!-- SCREENSHOT TO CAPTURE: images/maa2a-0-4.png - terminal showing "Ollama is ready with model llama3.2:3b" -->
+The codespace is ready when the setup output finishes and the terminal shows a welcome message
+and a prompt. To double-check that the local model is in place, run `ollama list` in the
+terminal - you should see `llama3.2:3b`:
+
+![Checking the local model with ollama list](./images/maa2a-0-4.png?raw=true "Checking the local model with ollama list")
 
 <br>
 
@@ -116,7 +120,7 @@ source scripts/setup-key.sh
 
 This sets the key in this terminal *and* in every terminal you open later, so you only do it once.
 
-<!-- SCREENSHOT TO CAPTURE: images/maa2a-0-9.png - output of "source scripts/setup-key.sh" -->
+![Setting the Groq key](./images/maa2a-0-9.png?raw=true "Setting the Groq key")
 
 Then confirm the key works:
 
@@ -126,7 +130,7 @@ bash scripts/check-groq.sh
 
 You should see a line starting with `OK`. If you see `FAIL`, the message tells you what to do next.
 
-<!-- SCREENSHOT TO CAPTURE: images/maa2a-0-10.png - output of "bash scripts/check-groq.sh" showing OK -->
+![Groq key check OK](./images/maa2a-0-10.png?raw=true "Groq key check OK")
 
 <br>
 
