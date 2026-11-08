@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.13 - 11/07/26
+## Revision 1.14 - 11/08/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until setup finishes and the terminal shows a prompt (3-5 minutes). To double-check that the local model is in place, run `ollama list` - you should see llama3.2:3b.**
 
@@ -474,7 +474,13 @@ The model may call the research agent twice - once per company - before the writ
 
 <br>
 
-11. (Optional - if time permits) Add a third URL to `AGENT_URLS` in the orchestrator pointing at a port with no server (e.g. `http://127.0.0.1:10003`) and run it to see how discovery fails. Production networks wrap discovery in retries and health checks - one of the operational concerns we cover in the closing slides. Remove the URL again when done.
+11. (Optional - if time permits) Test a weak handoff: ask about a company the research agent has no data on.
+
+```
+python orchestrator.py "Write a short brief for our board on Hooli as a possible supplier."
+```
+
+**Most runs stop honestly: the research agent says it has no data on Hooli, and the final result says the brief can't be written. Run it two or three times, though. Now and then the orchestrator fills the gap from its own general knowledge - look for `Facts:` in its request to the Business Writer - and the writer turns those unchecked "facts" into a confident recommendation. Instructions make this less likely, not impossible. The "Handoffs" slide in the closing section covers what production systems add.**
 
 <br>
 
