@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.14 - 11/08/26
+## Revision 1.15 - 11/08/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until setup finishes and the terminal shows a prompt (3-5 minutes). To double-check that the local model is in place, run `ollama list` - you should see llama3.2:3b.**
 
@@ -17,7 +17,7 @@
 
 **Lab 1 - Multi-Agent Foundations: A Supervisor and Its Team (LangGraph)**
 
-**Purpose: To see how a multi-agent system is put together in LangGraph using the *supervisor* pattern - specialist agents wrapped as tools that a coordinating agent can call. (Estimated time: 10-12 minutes)**
+**Purpose: To see how a multi-agent system is put together in LangGraph using the *supervisor* pattern - specialist agents wrapped as tools that a coordinating agent can call.**
 
 **Steps:**
 
@@ -101,7 +101,7 @@ The trace should show only the RESEARCHER - no math, no analyst. (The knowledge 
 
 **Lab 2 - Role-Based Crews with Tools (CrewAI)**
 
-**Purpose: To build a CrewAI crew whose agents use tools - an analyst that decides what to look up and calculate, and a writer that checks the house style guide before writing - while CrewAI moves the work between them. (Estimated time: 10-12 minutes)**
+**Purpose: To build a CrewAI crew whose agents use tools - an analyst that decides what to look up and calculate, and a writer that checks the house style guide before writing - while CrewAI moves the work between them.**
 
 **Steps:**
 
@@ -163,7 +163,7 @@ python content_crew.py "Write an investor note comparing Acme Corp and Globex."
 
 <br>
 
-10. Compare this lab to Lab 1. LangGraph gave us *explicit* control flow - we wrote the delegation tools ourselves. CrewAI gave us *declarative* collaboration - we described who the agents are, what tools they have, and what the tasks produce. CrewAI's other process type, `Process.hierarchical`, adds a manager agent that decides the task order too - it needs a stronger model than our local 3B, which is why we're using sequential today.
+10. Compare this lab to Lab 1. In Lab 1 we did the wiring ourselves: we wrapped each specialist in a tool function, and the supervisor's model decided as it ran which specialist to call and in what order. Here we only *described* the team - who the agents are, what tools each has, what each task produces - and CrewAI did the wiring. And because we chose `Process.sequential`, *we* set the order: analysis always runs first, then writing. CrewAI's other process type, `Process.hierarchical`, works more like Lab 1: a manager agent decides who does what. It needs a stronger model than our local 3B, which is why we're using sequential today.
 
 <br>
 
@@ -176,7 +176,7 @@ python content_crew.py "Write an investor note comparing Acme Corp and Globex."
 
 **Lab 3 - Your First A2A Agent: Cards, Servers, and Tasks**
 
-**Purpose: To serve a real tool-using agent over A2A (spec v1.0) - an AgentExecutor that reports each step the agent takes as a task update, an Agent Card that advertises it, and a JSON-RPC endpoint we can call with nothing but curl. (Estimated time: 10-12 minutes)**
+**Purpose: To serve a real tool-using agent over A2A (spec v1.0) - an AgentExecutor that reports each step the agent takes as a task update, an Agent Card that advertises it, and a JSON-RPC endpoint we can call with nothing but curl.**
 
 **Steps:**
 
@@ -265,7 +265,7 @@ curl -s -X POST http://127.0.0.1:9999/ \
 
 <br>
 
-9. Examine the response. It's a complete **Task** object: an `id`, a `status` of `TASK_STATE_COMPLETED`, an `artifacts` list holding the agent's answer, and a `history`. Read the history: your question, then one progress message per tool the agent chose - for example `Calling lookup_company(Globex)` and `Calling calculate(950000000 / 5400)`. The task is a record of what the agent did.
+9. Examine the response. It's a complete **Task** object: an `id`, a `status` of `TASK_STATE_COMPLETED`, an `artifacts` list holding the agent's answer, and a `history`. Read the history: your question, then one progress message per tool the agent chose - for example `Calling lookup_company(Globex)` and `Calling calculate(950000000 / 5400)`. The task is a record of what the agent did. **Where's the answer?** It's in `artifacts`, which appears *above* `history` in the JSON - scroll up to find it. The history only shows which tools the agent called, not what each tool returned; the tool results go back to the agent, which uses them to write the final answer in the artifact.
 
 
 ![Task response with history of tool steps](./images/maa2a-3-3.png?raw=true "Task response with history of tool steps")
@@ -301,7 +301,7 @@ curl -s -X POST http://127.0.0.1:9999/ \
 
 **Lab 4 - Speaking A2A: The Client Side, Streaming, and Task Retrieval**
 
-**Purpose: To write an A2A client that discovers an agent from its card, sends it a question, streams the agent's progress live as it works, and retrieves the finished task afterward. (Estimated time: 10-12 minutes)**
+**Purpose: To write an A2A client that discovers an agent from its card, sends it a question, streams the agent's progress live as it works, and retrieves the finished task afterward.**
 
 **Steps:**
 
@@ -380,7 +380,7 @@ Compare the WORKING updates with step 6. There's no math in this question, so th
 
 **Lab 5 - The Payoff: A Cross-Framework Agent Network**
 
-**Purpose: To connect a LangGraph agent and a CrewAI agent into one network over A2A, then build an orchestrator whose AI model reads their Agent Cards and decides which agents to call - without knowing which framework is behind either one. (Estimated time: 12 minutes)**
+**Purpose: To connect a LangGraph agent and a CrewAI agent into one network over A2A, then build an orchestrator whose AI model reads their Agent Cards and decides which agents to call - without knowing which framework is behind either one.**
 
 **Steps:**
 
@@ -490,14 +490,16 @@ python orchestrator.py "Write a short brief for our board on Hooli as a possible
 kill %1 %2
 ```
 
+If you get `no such job` (for example, you're in a different terminal from the one where you started the servers), stop them by name instead:
+
+```
+pkill -f "langgraph_server.py|crewai_server.py"
+```
+
 <p align="center">
 **[END OF LAB]**
 </p>
 <br><br>
-
-<p align="center">
-<b>THANKS FOR ATTENDING! PLEASE FILL OUT THE SURVEY!</b>
-</p>
 
 <p align="center">
 <b>For educational use only by the attendees of our workshops.</b>
