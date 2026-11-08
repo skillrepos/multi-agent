@@ -68,7 +68,8 @@ writer = Agent(
 writing_task = Task(
     description=("{request}\n\nFirst get the style guide for the audience "
                  "mentioned above. Then write the document using only the "
-                 "facts provided."),
+                 "facts provided. If the request gives no facts, do not write "
+                 "anything - reply only: NEED FACTS."),
     expected_output="The finished document, following the style guide.",
     agent=writer,
 )

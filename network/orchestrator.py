@@ -38,8 +38,10 @@ EXAMPLE = ("Write a short brief for our board on Globex as a possible robotics "
 INSTRUCTIONS = (
     "You coordinate a team of remote agents, which you can call as tools. "
     "Plan the steps, call the agents in a sensible order, and give each one "
-    "everything it needs - including results from earlier agents. When the "
-    "requested document is finished, reply with it in full.")
+    "everything it needs - including results from earlier agents. The agents "
+    "cannot see this conversation, so copy the actual facts (numbers, dates, "
+    "names) into each request. When an agent returns the finished document, "
+    "reply with exactly that document - do not rewrite it or add to it.")
 
 
 async def discover_agents(httpx_client):

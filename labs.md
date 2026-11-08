@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 ## Hands-on labs
-## Revision 1.12 - 11/02/26
+## Revision 1.13 - 11/07/26
 
 **Startup: If you haven't already, follow the steps in the README to start your codespace. Wait until setup finishes and the terminal shows a prompt (3-5 minutes). To double-check that the local model is in place, run `ollama list` - you should see llama3.2:3b.**
 
@@ -131,7 +131,7 @@ code -d ../extra/content_crew.txt content_crew.py
 python content_crew.py
 ```
 
-**Several model calls happen here: under a minute on Groq; a few minutes on the local model. Your first run may end by asking `Share this execution trace with CrewAI? [y/N]` - just wait or press Enter (it defaults to No after 20 seconds). Later runs print a "Tracing Status" box saying tracing is disabled instead. Both are informational - nothing to do. A WARNING about an "approximate input token count" is harmless too.**
+**Several model calls happen here: under a minute on Groq; a few minutes on the local model. Your first run may end by asking `Share this execution trace with CrewAI? [y/N]` - just wait or press Enter (it defaults to No after 20 seconds). Later runs print a "Tracing Status" box saying tracing is disabled instead. Both are informational - nothing to do. A WARNING about an "approximate input token count" and a `[Finalize] todos_count=0` line are harmless too.**
 
 <br>
 
@@ -273,7 +273,7 @@ curl -s -X POST http://127.0.0.1:9999/ \
 
 <br>
 
-10. Tasks persist after they finish. Copy the `id` value from the response and fetch the task again with the `GetTask` method (replace `<TASK-ID>` with your actual id):
+10. Tasks persist after they finish. Copy the task's `id` from the response (the first `id`, just under `"task": {` near the top - scroll up) and fetch the task again with the `GetTask` method (replace `<TASK-ID>` with your actual id):
 
 ```
 curl -s -X POST http://127.0.0.1:9999/ \
@@ -363,7 +363,7 @@ Compare the WORKING updates with step 6. There's no math in this question, so th
 
 <br>
 
-9. Now find `streaming=True` in `ClientConfig`, set it to `False`, save, and run the step 8 command again. You wait with no progress at all, then get only the finished task. For agents doing multi-step work, that live progress is why streaming matters. Set it back to `True` and save.
+9. Now find `streaming=True` in `ClientConfig`, set it to `False`, save, and run the step 8 command again. You wait with no progress updates and no streamed answer - just the task id, then the fetched summary. For agents doing multi-step work, that live progress is why streaming matters. Set it back to `True` and save.
 
 <br>
 
@@ -474,15 +474,15 @@ The model may call the research agent twice - once per company - before the writ
 
 <br>
 
-11. Clean up the background servers:
+11. (Optional - if time permits) Add a third URL to `AGENT_URLS` in the orchestrator pointing at a port with no server (e.g. `http://127.0.0.1:10003`) and run it to see how discovery fails. Production networks wrap discovery in retries and health checks - one of the operational concerns we cover in the closing slides. Remove the URL again when done.
+
+<br>
+
+12. Clean up the background servers:
 
 ```
 kill %1 %2
 ```
-
-<br>
-
-12. (Optional - if time permits) Add a third URL to `AGENT_URLS` in the orchestrator pointing at a port with no server (e.g. `http://127.0.0.1:10003`) and run it to see how discovery fails. Production networks wrap discovery in retries and health checks - one of the operational concerns we cover in the closing slides. Remove the URL again when done.
 
 <p align="center">
 **[END OF LAB]**
