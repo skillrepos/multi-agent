@@ -1,6 +1,6 @@
 # Multi-Agent AI Systems & the A2A Protocol
 
-**Hands-on workshop — Revision 1.6 — 11/02/26**
+**Hands-on workshop — Revision 1.7 — 11/10/26**
 
 This repository contains the labs, code, and setup for the *Multi-Agent AI Systems & the A2A Protocol*
 workshop. In it, you'll build multi-agent systems with LangGraph and CrewAI, learn the A2A
@@ -32,7 +32,7 @@ setup guides instead. Each one ends by sending you back here for steps 4 and 5 (
 
 - [Mac with Docker Desktop](Local_Setup_Mac_Docker_Desktop.md) — the same environment as the Codespace, on your machine
 - [Windows with Docker Desktop](Local_Setup_Windows_Docker_Desktop.md) — the same environment as the Codespace, on your machine
-- [No Docker (Mac, or Windows using WSL)](Local_Setup_No_Docker.md) — install the pieces yourself
+- [No Docker (Apple Silicon Mac, or Windows using WSL)](Local_Setup_No_Docker.md) — install the pieces yourself (Intel Macs: use the Mac Docker Desktop guide)
 
 <br>
 

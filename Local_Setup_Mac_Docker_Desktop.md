@@ -8,6 +8,20 @@ including `code -d`.
 
 You do **not** need a GitHub account for this path.
 
+## What you'll need
+
+| | What | Where it's covered |
+|---|---|---|
+| **Computer** | Mac (Apple Silicon or Intel), 4+ CPU cores, **16 GB** memory, about **32 GB** free disk | Step 1 |
+| **Software** (all free) | Docker Desktop, VS Code with the Dev Containers extension, Git | Step 2 |
+| **Groq API key** | Recommended, free (the labs run without it, just slowly) | Step 7 |
+| **Internet access during setup** | github.com, mcr.microsoft.com, and ghcr.io (the workshop environment); pypi.org and files.pythonhosted.org (Python packages); ollama.com and registry.ollama.ai (the local model); console.groq.com and api.groq.com (Groq). If your company network blocks downloads from any of these, do the setup on another network or ask your IT team. | |
+
+Everything else is installed for you inside the container, including the Python packages for
+LangGraph, CrewAI, and **A2A**. A2A needs no account and no separate download: it's the `a2a-sdk`
+Python package, and the A2A agents you build in Labs 3-5 run inside the container on your own
+computer, on ports **9999**, **10001**, and **10002**.
+
 ---
 
 ## 1. Check your Mac
@@ -66,8 +80,8 @@ The first time takes about **10-15 minutes**. VS Code downloads the base environ
 Python packages, installs Ollama, and downloads the local `llama3.2:3b` model. You can watch the
 progress in the terminal panel.
 
-It's ready when the terminal shows `Ollama is ready with model llama3.2:3b`. Later openings take
-under a minute.
+The last setup message is `Ollama is ready with model llama3.2:3b`. That terminal may close before you
+see it - that's fine, step 6 checks that everything is in place. Later openings take under a minute.
 
 ## 6. Check that it worked
 
@@ -75,10 +89,11 @@ Open a new terminal in VS Code (**Terminal → New Terminal**) and run:
 
 ```
 ollama list
-python -c "import a2a, crewai, langgraph; print('Python packages OK')"
+python -c "from a2a.server.routes import create_jsonrpc_routes; from a2a.client import create_client; import crewai, langgraph, uvicorn; print('Python packages OK')"
 ```
 
-You should see `llama3.2:3b` in the list, then `Python packages OK`.
+You should see `llama3.2:3b` in the list, then `Python packages OK`. (The second command checks the
+A2A server and client pieces as well as LangGraph and CrewAI.)
 
 ## 7. Set up your Groq key
 
@@ -108,9 +123,15 @@ Very little, because this is the same environment:
   8 GB memory, 4 CPUs) and that you have about 32 GB of free disk space.
 - **Model missing** — run `ollama pull llama3.2:3b` in the VS Code terminal.
 - **`ollama` not responding after you reopen the folder** — run `bash scripts/startOllama.sh`.
-- **`address already in use`** — another program on your Mac may be using port 9999, 10001, or 10002.
-  Quit it, or stop a lab server you left running with `kill $(lsof -t -i:9999)` (use the port from the
-  error message).
+- **`address already in use`** — a lab server you started earlier is still running in the container.
+  Stop it with `kill $(lsof -t -i:9999)` (use the port from the error message).
+
+- **`curl` or a lab script can't reach `127.0.0.1` (connection refused, or an error page from your
+  company's network) while the lab server is running** — your company sends web traffic through a
+  proxy server, and the labs' requests to your own computer are being sent there too. In each terminal
+  you use for the labs, run `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1`. To make
+  that permanent inside the container, run
+  `echo 'export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1' >> ~/.bashrc` once.
 
 ## When you're done
 

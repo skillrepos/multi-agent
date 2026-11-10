@@ -1,4 +1,4 @@
-# Local Setup Guide: No Docker (Mac, or Windows using WSL)
+# Local Setup Guide: No Docker (Apple Silicon Mac, or Windows using WSL)
 
 **Use this only if you can't use GitHub Codespaces or Docker Desktop. The Codespace (see
 [README.md](README.md)) is the recommended setup. If you can install Docker Desktop, the
@@ -13,17 +13,36 @@ You do **not** need a GitHub account for this path.
 
 | Your computer | Follow |
 |---|---|
-| Mac | [Part A](#part-a-mac) |
+| Mac with Apple Silicon (M1 or later) | [Part A](#part-a-mac) |
+| Mac with an Intel chip | **Use the [Mac Docker guide](Local_Setup_Mac_Docker_Desktop.md) instead.** CrewAI needs a package (`lancedb`) that isn't made for Intel Macs, so the Python install in this guide fails there. |
 | Windows | [Part B](#part-b-windows-using-wsl), which uses WSL, the Linux environment built into Windows. The lab commands are written for a Mac/Linux-style terminal, so plain PowerShell or Command Prompt won't work for the labs. |
-| Linux | [Part B](#part-b-windows-using-wsl) from step B3 (use your distribution's package manager if it isn't Ubuntu/Debian) |
+| Linux | [Part B](#part-b-windows-using-wsl) from step B3 (use your distribution's package manager if it isn't Ubuntu/Debian). Your Python must be 3.10 to 3.13 - see [Troubleshooting](#troubleshooting) if it's newer. |
 
-You'll need about **10 GB of free disk space** and at least **8 GB of memory** (16 GB recommended).
+## What you'll need
+
+- **Computer:** an Apple Silicon Mac, or a Windows PC that can run WSL (Windows 11, or Windows 10
+  version 2004 or later). About **10 GB** of free disk space and at least **8 GB** of memory (16 GB
+  recommended).
+- **Software** (all free, installed step by step below): Python 3.10 to 3.13, Git, VS Code, Ollama with
+  the `llama3.2:3b` model, and the workshop's Python packages. On Windows, also WSL with Ubuntu 24.04.
+- **Groq API key:** recommended, free (README steps 4 and 5). The labs run without it, just slowly.
+- **Internet access during setup** to github.com, pypi.org and files.pythonhosted.org (Python
+  packages), ollama.com and registry.ollama.ai (Ollama and the model), console.groq.com and
+  api.groq.com (Groq), and on Windows, Microsoft's download servers for WSL and Ubuntu. If your company
+  network blocks downloads from any of these, do the setup on another network or ask your IT team.
+- **For A2A: nothing extra.** A2A needs no account and no separate download. It's the `a2a-sdk` Python
+  package, installed with the others in step A5 / B4. The A2A agents you build run on your own computer,
+  on ports **9999** (Labs 3 and 4) and **10001** and **10002** (Lab 5).
 
 ---
 
 ## Part A: Mac
 
 ### A1. Install Python 3.12
+
+First, check which chip your Mac has: Apple menu → **About This Mac**. If it says **Chip: Apple M...**,
+continue. If it says **Processor: ... Intel ...**, stop here and use the
+[Mac Docker guide](Local_Setup_Mac_Docker_Desktop.md) instead (see the table at the top).
 
 The workshop needs Python **3.10 to 3.13**. (One of the packages, CrewAI, doesn't support 3.14
 yet.) The `python3` that comes with macOS is usually 3.9, which is **too old**, so install 3.12:
@@ -70,12 +89,14 @@ cd ~
 git clone https://github.com/skillrepos/multi-agent.git
 cd multi-agent
 python3.12 -m venv .venv
+echo 'export CREWAI_DISABLE_TELEMETRY=true' >> .venv/bin/activate
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-The install takes a few minutes. Your prompt now starts with `(.venv)`. That means the workshop's Python
+The `echo` line turns off CrewAI's usage reporting whenever the environment is on, the same as in the
+Codespace. The install takes a few minutes. Your prompt now starts with `(.venv)`. That means the workshop's Python
 environment is turned on in this terminal.
 
 ### A6. Check that it worked
@@ -89,7 +110,7 @@ VS Code opens the `multi-agent` folder. Open a terminal in VS Code (**Terminal �
 ```
 source .venv/bin/activate
 python --version
-python -c "import a2a, crewai, langgraph; print('Python packages OK')"
+python -c "from a2a.server.routes import create_jsonrpc_routes; from a2a.client import create_client; import crewai, langgraph, uvicorn; print('Python packages OK')"
 ollama list
 code --version
 ```
@@ -112,14 +133,19 @@ Then read [What looks different](#what-looks-different-from-the-codespace) below
 Right-click the **Start** button, choose **Terminal (Admin)** or **Windows PowerShell (Admin)**, and run:
 
 ```
-wsl --install
+wsl --install -d Ubuntu-24.04
 ```
 
-Restart your PC when it finishes. After the restart an **Ubuntu** window opens and asks you to create a
-Linux username and password. Pick anything you'll remember; you'll need the password for `sudo`.
+Restart your PC when it finishes. After the restart an **Ubuntu 24.04** window opens and asks you to
+create a Linux username and password. Pick anything you'll remember; you'll need the password for `sudo`.
 
-From now on, run every workshop command in the **Ubuntu** window (open it from the Start menu) or in
-VS Code's terminal once it's connected to Ubuntu (step B4). Don't use PowerShell for them.
+**Why 24.04?** The labs need Python 3.10 to 3.13. Ubuntu 24.04 comes with Python 3.12. The newest Ubuntu
+(26.04) comes with Python 3.14, which CrewAI doesn't support yet. If you already use WSL with a different
+Ubuntu, run the same command anyway - the two live side by side - and use Ubuntu 24.04 for the workshop.
+
+From now on, run every workshop command in the **Ubuntu 24.04** window (open **Ubuntu 24.04** from the
+Start menu, or run `wsl -d Ubuntu-24.04` in PowerShell) or in VS Code's terminal once it's connected to
+Ubuntu (step B6). Don't use PowerShell for them.
 
 ### B2. Install VS Code and the WSL extension (on Windows)
 
@@ -130,11 +156,12 @@ VS Code's terminal once it's connected to Ubuntu (step B4). Don't use PowerShell
 
 ```
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip git curl zstd
+sudo apt install -y python3 python3-venv python3-pip git curl zstd lsof
 python3 --version
 ```
 
-The version must be **3.10 to 3.13**. Current Ubuntu gives you 3.12.
+You should see Python 3.12. (The workshop needs **3.10 to 3.13**. If you see 3.14, you're in a newer
+Ubuntu - go back to step B1.)
 
 ### B4. Get the workshop files and install the Python packages (in Ubuntu)
 
@@ -143,10 +170,14 @@ cd ~
 git clone https://github.com/skillrepos/multi-agent.git
 cd multi-agent
 python3 -m venv .venv
+echo 'export CREWAI_DISABLE_TELEMETRY=true' >> .venv/bin/activate
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+The `echo` line turns off CrewAI's usage reporting whenever the environment is on, the same as in the
+Codespace.
 
 Clone into your Ubuntu home folder (`~`), **not** a Windows folder like `/mnt/c/Users/...`. It's much
 faster, and it avoids Windows line-ending problems with the setup scripts.
@@ -178,13 +209,13 @@ code .
 ```
 
 VS Code opens on Windows, connected to your Ubuntu folder (the first time it installs a small helper,
-which takes a minute). The lower-left corner says **WSL: Ubuntu**. Open a terminal in VS Code
+which takes a minute). The lower-left corner says **WSL: Ubuntu-24.04**. Open a terminal in VS Code
 (**Terminal → New Terminal**) and run:
 
 ```
 source .venv/bin/activate
 python --version
-python -c "import a2a, crewai, langgraph; print('Python packages OK')"
+python -c "from a2a.server.routes import create_jsonrpc_routes; from a2a.client import create_client; import crewai, langgraph, uvicorn; print('Python packages OK')"
 ollama list
 ```
 
@@ -272,6 +303,14 @@ The lab screenshots show the Codespace in a browser, with a prompt like
 
 On a Mac, copy and paste in the terminal with `Cmd+C` / `Cmd+V`.
 
+### 7. The A2A labs (3, 4, and 5)
+
+These work the same as in the Codespace. The A2A servers and everything that talks to them (`curl`, the
+client, the orchestrator) use `127.0.0.1`, which means your own computer, so the agents never leave your
+machine; only the calls to Groq go out to the internet. Lab 5's background-server commands (`&`,
+`kill %1 %2`, `pkill`) work as written in both the Mac Terminal and Ubuntu. If your company uses a web
+proxy, see the proxy item under [Troubleshooting](#troubleshooting).
+
 ---
 
 ## Troubleshooting
@@ -280,6 +319,10 @@ On a Mac, copy and paste in the terminal with `Cmd+C` / `Cmd+V`.
   `source .venv/bin/activate` from the `multi-agent` folder.
 - **`pip install` fails mentioning your Python version** — check `python --version` inside the environment.
   It must be 3.10 to 3.13. Delete the `.venv` folder and create it again with the right Python (step A5 / B4).
+  On Windows, use Ubuntu 24.04 (step B1). On other Linux, install `python3.12` or `python3.13` with your
+  package manager and create the environment with it, for example `python3.12 -m venv .venv`.
+- **`pip install` fails with an error mentioning `lancedb`** — you're on an Intel Mac. This guide can't
+  work there; use the [Mac Docker guide](Local_Setup_Mac_Docker_Desktop.md).
 - **`code: command not found`** — Mac: redo step A3. Windows: make sure you're in the Ubuntu terminal or a
   VS Code terminal connected to WSL, and that the WSL extension is installed (step B2). Or use the
   copy commands in [What looks different](#2-merging-code-if-code--d-doesnt-work-for-you).
@@ -288,13 +331,22 @@ On a Mac, copy and paste in the terminal with `Cmd+C` / `Cmd+V`.
   `ollama pull llama3.2:3b`.
 - **First request is very slow** — the model loads into memory on its first use (up to a few minutes).
   Later requests are faster.
+- **`curl` or a lab script can't reach `127.0.0.1` (connection refused, or an error page from your
+  company's network) while the lab server is running** — your company sends web traffic through a
+  proxy server, and the labs' requests to your own computer are being sent there too. In each terminal
+  you use for the labs, run `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1`. To make
+  that automatic, run this once from the `multi-agent` folder:
+  `echo 'export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1' >> .venv/bin/activate`
 - **`$'\r': command not found` from a script (Windows)** — the files were cloned into a Windows folder.
   Clone again inside your Ubuntu home folder (step B4).
 
 ## Clean up afterwards
 
+From the folder that contains `multi-agent` (your home folder, if you followed this guide), run:
+
 ```
-# from the folder that contains multi-agent
-rm -rf multi-agent          # removes the workshop files and its Python environment
-ollama rm llama3.2:3b       # frees about 2 GB
+rm -rf multi-agent
+ollama rm llama3.2:3b
 ```
+
+The first command removes the workshop files and their Python environment. The second frees about 2 GB.
